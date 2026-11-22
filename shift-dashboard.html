@@ -1,0 +1,123 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1" />
+    <title>BV Mining Solution | Shift Board</title>
+    <link rel="stylesheet" href="assets/css/shift-dashboard.css">
+    <link rel="stylesheet" href="assets/css/responsive.css">
+</head>
+  <body>
+    <main class="shell">
+      <header class="top">
+        <div class="brand">
+          <div
+            class="mark"
+            style="
+              background: linear-gradient(145deg, #176b52, #123f32);
+              box-shadow:
+                0 0 0 3px #e2eee7,
+                inset 0 1px 0 #ffffff55;
+              letter-spacing: -1px;
+            "
+          >
+            BV
+          </div>
+          <div>
+            <strong>BV Mining Solution</strong
+            ><small>Daily team schedule</small>
+          </div>
+        </div>
+        <div style="display: flex; gap: 9px; align-items: center">
+          <a class="today-btn" href="index.html" style="text-decoration: none"
+            >HR Home</a
+          ><button class="today-btn" id="todayBtn">Go to today</button>
+        </div>
+      </header>
+      <section class="hero">
+        <div>
+          <div class="eyebrow">Daily overview</div>
+          <h1 id="dateTitle">Today's schedule</h1>
+          <p>View your team's shifts and rest assignments in one place.</p>
+        </div>
+        <div class="datebox">
+          <button id="prev" aria-label="Previous day">‹</button
+          ><input type="date" id="dateInput" /><button
+            id="next"
+            aria-label="Next day"
+          >
+            ›
+          </button>
+        </div>
+      </section>
+      <section class="stats">
+        <div class="stat">
+          <div class="stat-top">
+            <span>Total members</span><i class="dot"></i>
+          </div>
+          <div class="num" id="totalCount">0</div>
+        </div>
+        <div class="stat">
+          <div class="stat-top"><span>1st shift</span><i class="dot"></i></div>
+          <div class="num" id="firstCount">0</div>
+        </div>
+        <div class="stat">
+          <div class="stat-top"><span>2nd shift</span><i class="dot"></i></div>
+          <div class="num" id="secondCount">0</div>
+        </div>
+        <div class="stat">
+          <div class="stat-top">
+            <span>Night / Rest</span><i class="dot"></i>
+          </div>
+          <div class="num">
+            <span id="nightCount">0</span
+            ><span style="color: #b8c0bb; font-size: 20px"> / </span
+            ><span id="restCount">0</span>
+          </div>
+        </div>
+      </section>
+      <section class="shiftcards" id="shiftBreakdown"></section>
+      <div class="otbar">
+        <span>Overtime recorded for this date</span
+        ><strong id="otHoursTotal">0.00 h</strong
+        ><span id="otPeopleCount">· 0 employees</span>
+      </div>
+      <div class="layout">
+        <section class="panel">
+          <div class="panelhead">
+            <h2>Today's team</h2>
+            <span id="memberSummary">0 members</span>
+          </div>
+          <div id="roster"></div>
+        </section>
+        <aside class="panel side">
+          <h2>Find employee</h2>
+          <p class="sub">Search by Employee Code or name to assign a shift.</p>
+          <a
+            class="primary"
+            href="employee-records.html"
+            style="display: block; text-align: center; text-decoration: none"
+            >Open Employee Records</a
+          ><input
+            class="searchbox"
+            id="searchInput"
+            type="search"
+            placeholder="Employee Code or name..."
+            aria-label="Search by Employee Code or employee name"
+          />
+          <div class="members" id="members">
+            <div class="empty" style="padding: 20px 5px">
+              Enter an Employee Code or name to find a person.
+            </div>
+          </div>
+          <p class="notice">
+            Shift and overtime entries are saved separately for each date.
+          </p>
+        </aside>
+      </div>
+      <div class="footer">Shift Board · Your team, your schedule</div>
+    </main>
+    <div class="toast" id="toast"></div>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script><script src="assets/js/supabase-config.js"></script><script src="assets/js/supabase-client.js"></script><script src="assets/js/app-bootstrap.js"></script><script>window.HRDB.boot().then(function(ready){if(!ready)return;var app=document.createElement("script");app.src="assets/js/shift-dashboard.js";document.body.appendChild(app)}).catch(function(error){window.HRDB.status("Supabase connection failed: "+error.message,true)})</script>
+  </body>
+</html>

@@ -1,0 +1,72 @@
+/* Shared responsive rules for the static HR app. Loaded after page styles. */
+*,*::before,*::after{box-sizing:border-box}
+html{width:100%;min-width:320px;scroll-padding-top:16px;-webkit-text-size-adjust:100%;text-size-adjust:100%}
+body{width:100%;min-width:320px;overflow-x:hidden}
+img,svg,video,canvas{max-width:100%;height:auto}
+.shell{width:min(100%,1500px);margin-inline:auto;padding:clamp(14px,3vw,32px) clamp(12px,3vw,28px) clamp(32px,6vw,60px)}
+.top{display:flex;flex-wrap:wrap;gap:12px;align-items:center;min-width:0}
+.brand{flex:1 1 220px;min-width:0}
+.brand strong,.brand small{overflow-wrap:anywhere}
+.links,.nav{display:flex;flex-wrap:wrap;gap:8px;min-width:0}
+.hrdb-account{max-width:100%;flex:0 1 auto;min-width:0}
+.hrdb-account strong{max-width:min(34vw,280px);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.hero h1{font-size:clamp(25px,4vw,36px);line-height:1.12;overflow-wrap:anywhere}
+.hero p,.head p,.note,.hint{line-height:1.55}
+.grid{grid-template-columns:minmax(0,1fr) minmax(260px,350px);min-width:0}
+.panel,.stat,.shell>section,.shell>article{min-width:0}
+.tablewrap{width:100%;max-width:100%;overflow-x:auto;overscroll-behavior-inline:contain;-webkit-overflow-scrolling:touch}
+table{max-width:100%}
+input,select,textarea,button{font:inherit;max-width:100%}
+input,select,textarea{min-width:0}
+button,.button,.primary,.secondary,.link{min-height:40px;touch-action:manipulation}
+.filters,.controls,.toolbar,.historysearch,.customrow,.formfoot,.panelhead,.rowhead{flex-wrap:wrap;min-width:0}
+.filters>* , .controls>*{min-width:0;max-width:100%}
+.row{min-width:0}
+@media(max-width:900px){
+  .grid{grid-template-columns:minmax(0,1fr)}
+  .stats{grid-template-columns:repeat(3,minmax(0,1fr))}
+  .overview{grid-template-columns:repeat(2,minmax(0,1fr))}
+  .modulegrid{grid-template-columns:repeat(2,minmax(0,1fr))}
+  .top{align-items:flex-start}
+  .hrdb-account{margin-left:auto!important;justify-content:flex-end}
+}
+@media(max-width:640px){
+  .shell{padding:18px 13px 36px}
+  .top{gap:10px;margin-bottom:24px}
+  .brand{flex-basis:100%}
+  .brand strong{font-size:16px}
+  .brand small{font-size:11px}
+  .links,.nav{flex-direction:row;align-items:center;flex-wrap:wrap}
+  .links .link,.nav .link{padding:8px 10px;font-size:12px}
+  .hrdb-account{flex:1 1 100%;justify-content:flex-start;margin-left:0!important;gap:8px}
+  .hrdb-account strong{max-width:58vw;text-align:left}
+  .hrdb-account>div{text-align:left!important}
+  .hero{margin-bottom:17px}
+  .hero p{font-size:13px}
+  .stats{grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}
+  .overview,.modulegrid{grid-template-columns:1fr}
+  .row{grid-template-columns:minmax(0,1fr)}
+  .filters,.controls,.toolbar{align-items:stretch}
+  .filters>*,.controls>*,.toolbar>*{flex:1 1 100%;width:100%}
+  .filters input,.filters select,.controls input,.controls select,.toolbar input,.toolbar select{width:100%}
+  .panelhead{align-items:flex-start;gap:8px}
+  .table{min-width:640px}
+  .tablewrap table{white-space:nowrap}
+  .choices{grid-template-columns:1fr}
+  .customrow{flex-wrap:wrap}
+  .customrow input{flex:1 1 100%}
+  .date{display:flex;flex-wrap:wrap;gap:7px;width:100%}
+  .date input{flex:1 1 150px;min-width:0}
+  .date button{flex:0 0 auto}
+}
+@media(max-width:400px){
+  .shell{padding-inline:10px}
+  .brand{gap:9px}
+  .mark{flex:0 0 38px;width:38px;height:38px}
+  .hrdb-account{gap:6px}
+  .hrdb-account strong{max-width:46vw;font-size:12px}
+  .hrdb-signout,.hrdb-account>a{padding:8px 9px!important;font-size:11px!important}
+  .stats{grid-template-columns:1fr 1fr}
+  .filters,.toolbar{padding:12px}
+  .table{min-width:580px}
+}

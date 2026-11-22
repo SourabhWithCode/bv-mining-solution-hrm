@@ -1,0 +1,16 @@
+# Local environment secrets and Supabase CLI credentials
+.env
+.env.*
+!.env.example
+.supabase/
+
+# Dependencies and generated output
+node_modules/
+dist/
+build/
+
+# Editor and operating-system files
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db

@@ -1,0 +1,189 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1" />
+    <title>BV Mining Solution | HR Dashboard</title>
+    <link rel="stylesheet" href="assets/css/index.css">
+    <link rel="stylesheet" href="assets/css/responsive.css">
+</head>
+  <body>
+    <main class="shell">
+      <header class="top">
+        <div class="brand">
+          <div
+            class="mark"
+            style="
+              background: linear-gradient(145deg, #176b52, #123f32);
+              box-shadow:
+                0 0 0 3px #e2eee7,
+                inset 0 1px 0 #ffffff55;
+              letter-spacing: -1px;
+            "
+          >
+            BV
+          </div>
+          <div>
+            <strong>BV Mining Solution</strong
+            ><small>Workforce management</small>
+          </div>
+        </div>
+        <div class="date">
+          <button id="prevDate" aria-label="Previous day">‹</button
+          ><input
+            type="date"
+            id="dashboardDate"
+            aria-label="Choose dashboard date"
+          /><button id="nextDate" aria-label="Next day">›</button
+          ><button id="todayBtn">Today</button>
+        </div>
+      </header>
+      <section class="welcome">
+        <div>
+          <div class="eyebrow" id="overviewLabel">Today's overview</div>
+          <h1>Welcome,Team BV Mining</h1>
+          <p>Workforce and PPE overview for the selected date.</p>
+        </div>
+      </section>
+      <section class="overview">
+        <div class="stat">
+          <div class="statline">
+            <span>Total employees</span><i class="dot"></i>
+          </div>
+          <div class="value" id="totalCount">0</div>
+          <div class="statfoot">registered employees</div>
+        </div>
+        <div class="stat">
+          <div class="statline"><span>On duty</span><i class="dot"></i></div>
+          <div class="value" id="dutyCount">0</div>
+          <div class="statfoot">assigned to 1st, 2nd, or night shift</div>
+        </div>
+        <div class="stat">
+          <div class="statline"><span>On rest</span><i class="dot"></i></div>
+          <div class="value" id="restCount">0</div>
+          <div class="statfoot">assigned to rest</div>
+        </div>
+        <div class="stat">
+          <div class="statline">
+            <span>PPE items issued</span><i class="dot"></i>
+          </div>
+          <div class="value" id="ppeCount">0</div>
+          <div class="statfoot">
+            # of items · <span id="ppePeople">0 employees</span>
+          </div>
+        </div>
+      </section>
+      <section>
+        <div class="sectionhead">
+          <div>
+            <h2 id="shiftSectionTitle">Today's shift distribution</h2>
+            <p>Employees assigned to each shift.</p>
+          </div>
+        </div>
+        <div class="shiftgrid">
+          <div class="shift">
+            <div class="shiftname">1st shift</div>
+            <div class="shiftcount" id="firstCount">0</div>
+            <div class="shiftunit">people</div>
+            <div class="shiftbar"><i id="firstBar" style="width: 0%"></i></div>
+          </div>
+          <div class="shift">
+            <div class="shiftname">2nd shift</div>
+            <div class="shiftcount" id="secondCount">0</div>
+            <div class="shiftunit">people</div>
+            <div class="shiftbar"><i id="secondBar" style="width: 0%"></i></div>
+          </div>
+          <div class="shift">
+            <div class="shiftname">Night shift</div>
+            <div class="shiftcount" id="nightCount">0</div>
+            <div class="shiftunit">people</div>
+            <div class="shiftbar"><i id="nightBar" style="width: 0%"></i></div>
+          </div>
+          <div class="shift">
+            <div class="shiftname">Rest</div>
+            <div class="shiftcount" id="restShiftCount">0</div>
+            <div class="shiftunit">people</div>
+            <div class="shiftbar"><i id="restBar" style="width: 0%"></i></div>
+          </div>
+        </div>
+      </section>
+      <section>
+        <div class="sectionhead">
+          <div>
+            <h2>HR modules</h2>
+            <p>Daily tools and space for future features.</p>
+          </div>
+        </div>
+        <div class="modulegrid">
+          <a class="module" href="employee-records.html"
+            ><div class="moduleicon">🪪</div>
+            <div>
+              <h3>Employee Records</h3>
+              <p>
+                Maintain complete employee profiles; fields can be completed
+                later.
+              </p>
+            </div>
+            <span class="arrow">›</span></a
+          ><a class="module" href="shift-dashboard.html"
+            ><div class="moduleicon">🗓️</div>
+            <div>
+              <h3>Shift Board</h3>
+              <p>
+                Manage employees, choose a date, and assign each member to a
+                shift.
+              </p>
+            </div>
+            <span class="arrow">›</span></a
+          ><a class="module" href="samaan-issue.html"
+            ><div class="moduleicon">🦺</div>
+            <div>
+              <h3>PPE Issue</h3>
+              <p>
+                View issued items by employee and date, or issue multiple items
+                at once.
+              </p>
+            </div>
+            <span class="arrow">›</span></a
+          ><a class="module" href="attendance.html"
+            ><div class="moduleicon">👥</div>
+            <div>
+              <h3>Attendance</h3>
+              <p>Record daily present, absent, late, and half-day status.</p>
+            </div>
+            <span class="arrow">›</span></a
+          ><a class="module" href="leave.html"
+            ><div class="moduleicon">🌴</div>
+            <div>
+              <h3>Leave Management</h3>
+              <p>Submit leave requests and update approval status.</p>
+            </div>
+            <span class="arrow">›</span></a
+          ><a class="module" href="ppe-stock.html"
+            ><div class="moduleicon">📦</div>
+            <div>
+              <h3>PPE Stock & Returns</h3>
+              <p>
+                Set stock levels, record receipts and returns, and see available
+                balances.
+              </p>
+            </div>
+            <span class="arrow">›</span></a
+          ><a class="module" href="reports.html"
+            ><div class="moduleicon">📊</div>
+            <div>
+              <h3>Reports</h3>
+              <p>Review date-range reports and download CSV files.</p>
+            </div>
+            <span class="arrow">›</span></a
+          >
+        </div>
+      </section>
+      <div class="note">
+        BV Mining Solution · Overview data is based on records saved in this
+        browser.
+      </div>
+    </main>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script><script src="assets/js/supabase-config.js"></script><script src="assets/js/supabase-client.js"></script><script src="assets/js/app-bootstrap.js"></script><script>window.HRDB.boot().then(function(ready){if(!ready)return;var app=document.createElement("script");app.src="assets/js/index.js";document.body.appendChild(app)}).catch(function(error){window.HRDB.status("Supabase connection failed: "+error.message,true)})</script>
+  </body>
+</html>
