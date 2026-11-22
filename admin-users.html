@@ -1,0 +1,42 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>User Management | BV Mining Solution</title>
+  <link rel="stylesheet" href="assets/css/admin-users.css">
+  <link rel="stylesheet" href="assets/css/responsive.css">
+</head>
+<body>
+  <main class="shell">
+    <header class="top">
+      <div class="brand"><div class="mark">BV</div><div><strong>BV Mining Solution</strong><small>Administrator controls</small></div></div>
+      <nav class="links"><a class="link" href="index.html">HR Home</a></nav>
+    </header>
+    <section class="hero"><div class="eyebrow">Access control</div><h1>User management</h1><p>Create accounts for HR, supervisors, viewers, or another administrator.</p></section>
+    <section class="grid">
+      <article class="panel">
+        <div class="head"><h2>Create an account</h2><p>Give the new user their temporary password securely. They can change it after signing in.</p></div>
+        <form id="createUserForm" class="body">
+          <label class="label" for="fullName">Employee name</label><input class="field" id="fullName" name="fullName" autocomplete="name" required maxlength="120">
+          <label class="label" for="designation">Designation</label><input class="field" id="designation" name="designation" placeholder="e.g. Mine Mate" required maxlength="80">
+          <label class="label" for="email">Login email</label><input class="field" id="email" name="email" type="email" autocomplete="email" required>
+          <label class="label" for="role">Access role</label><select class="field" id="role" name="role" required><option value="viewer">Viewer — view assigned pages</option><option value="supervisor">Supervisor — shifts and attendance</option><option value="hr">HR — employee and HR records</option><option value="admin">Admin — full access and user management</option></select>
+          <label class="label" for="password">Temporary password</label><input class="field" id="password" name="password" type="password" autocomplete="new-password" minlength="6" maxlength="12" required><small class="hint">Use 6 to 12 characters. Do not reuse your own password.</small>
+          <button class="primary" id="createButton" type="submit">Create user</button>
+          <div class="feedback" id="feedback" role="status" aria-live="polite"></div>
+        </form>
+      </article>
+      <article class="panel users-panel">
+        <div class="head rowhead"><div><h2>Application users</h2><p>Accounts and roles registered in this app.</p></div><button class="secondary" id="refreshUsers" type="button">Refresh</button></div>
+        <div class="tablewrap"><table><thead><tr><th>Name</th><th>Email</th><th>Designation</th><th>Access role</th><th>Created</th></tr></thead><tbody id="userRows"><tr><td class="empty" colspan="5">Loading users…</td></tr></tbody></table></div>
+      </article>
+    </section>
+  </main>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="assets/js/supabase-config.js"></script>
+  <script src="assets/js/supabase-client.js"></script>
+  <script src="assets/js/app-bootstrap.js"></script>
+  <script>window.HRDB.boot().then(function(ready){if(!ready)return;var app=document.createElement('script');app.src='assets/js/admin-users.js';document.body.appendChild(app)}).catch(function(error){window.HRDB.status('Supabase connection failed: '+error.message,true)})</script>
+</body>
+</html>

@@ -1,0 +1,482 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1" />
+    <title>Employee Records | HR</title>
+    <link rel="stylesheet" href="assets/css/employee-records.css">
+    <link rel="stylesheet" href="assets/css/responsive.css">
+</head>
+  <body>
+    <main class="shell">
+      <header class="top">
+        <div class="brand">
+          <div
+            class="mark"
+            style="
+              background: linear-gradient(145deg, #176b52, #123f32);
+              box-shadow:
+                0 0 0 3px #e2eee7,
+                inset 0 1px 0 #ffffff55;
+              letter-spacing: -1px;
+            "
+          >
+            BV
+          </div>
+          <div>
+            <strong>BV Mining Solution</strong
+            ><small>Employee master records</small>
+          </div>
+        </div>
+        <nav class="links">
+          <a class="link" href="index.html">HR Home</a
+          ><a class="link" href="employees-data.html">Employees Data</a
+          ><a class="link" href="shift-dashboard.html">Shift Board</a>
+        </nav>
+      </header>
+      <section class="hero">
+        <div class="eyebrow">Employee database</div>
+        <h1>Employee Records</h1>
+        <p>
+          Add and maintain complete employee details. All fields are optional;
+          the serial number is generated automatically.
+        </p>
+      </section>
+      <section class="panel expiry-panel">
+        <div class="head">
+          <h2>VTC, Medical & Authorisation expiry watch</h2>
+          <span
+            >Expired or expiring within 90 days · auto-calculated from issue
+            dates</span
+          >
+        </div>
+        <div class="expiry-stats">
+          <div class="expiry-stat overdue">
+            Expired (incl. today)<b id="expiredCount">0</b>
+          </div>
+          <div class="expiry-stat soon">
+            Due within 60 days<b id="due60Count">0</b>
+          </div>
+          <div class="expiry-stat">
+            Due in 61–90 days<b id="due90Count">0</b>
+          </div>
+        </div>
+        <div class="expiry-list" id="expiryList"></div>
+      </section>
+      <div class="layout">
+        <section class="panel">
+          <div class="head">
+            <h2 id="formTitle">Add employee record</h2>
+            <span>Optional fields · Auto serial number</span>
+          </div>
+          <form id="employeeForm" class="formbody">
+            <div class="fields" style="padding: 0">
+              <div class="field">
+                <label>Sr. No.</label>
+                <div class="srbox" id="srNo">Auto</div>
+              </div>
+              <div class="field">
+                <label for="employeeCode">Employee Code</label
+                ><input id="employeeCode" maxlength="40" />
+              </div>
+              <div class="field">
+                <label for="employeeNameAadhaar"
+                  >Name of the Employee (As Per Aadhaar)</label
+                ><input id="employeeNameAadhaar" maxlength="100" />
+              </div>
+            </div>
+            <details class="group" open>
+              <summary>Personal details</summary>
+              <div class="fields">
+                <div class="field">
+                  <label for="firstName">First Name</label
+                  ><input id="firstName" maxlength="60" />
+                </div>
+                <div class="field">
+                  <label for="surname">Surname</label
+                  ><input id="surname" maxlength="60" />
+                </div>
+                <div class="field">
+                  <label for="gender">Gender</label
+                  ><select id="gender">
+                    <option value="">Select</option>
+                    <option>Female</option>
+                    <option>Male</option>
+                    <option>Other</option>
+                    <option>Prefer not to say</option>
+                  </select>
+                </div>
+                <div class="field">
+                  <label for="fatherName">Father's Name</label
+                  ><input id="fatherName" maxlength="100" />
+                </div>
+                <div class="field">
+                  <label for="spouseName">Spouse Name</label
+                  ><input id="spouseName" maxlength="100" />
+                </div>
+                <div class="field">
+                  <label for="dob">Date of Birth</label
+                  ><input id="dob" type="date" />
+                </div>
+                <div class="field">
+                  <label for="nationality">Nationality</label
+                  ><input id="nationality" maxlength="60" />
+                </div>
+                <div class="field">
+                  <label for="educationLevel">Education Level</label
+                  ><input id="educationLevel" maxlength="80" />
+                </div>
+              </div>
+            </details>
+            <details class="group" open>
+              <summary>Employment details</summary>
+              <div class="fields">
+                <div class="field">
+                  <label for="dojDcs">DATE OF JOINING</label
+                  ><input id="dojDcs" type="date" />
+                </div>
+                <div class="field">
+                  <label for="designation">Designation</label
+                  ><input id="designation" maxlength="80" />
+                </div>
+                <div class="field">
+                  <label for="department">Department</label
+                  ><input id="department" maxlength="80" />
+                </div>
+                <div class="field">
+                  <label for="categoryAddressHs"
+                    >Category Address (HS/S/SS/US)</label
+                  ><select id="categoryAddressHs">
+                    <option value="">Select</option>
+                    <option>HS</option>
+                    <option>S</option>
+                    <option>SS</option>
+                    <option>US</option>
+                  </select>
+                </div>
+                <div class="field">
+                  <label for="employmentType">Type of Employment</label
+                  ><input id="employmentType" maxlength="80" />
+                </div>
+                <div class="field">
+                  <label for="location">Location</label
+                  ><input id="location" maxlength="100" />
+                </div>
+                <div class="field">
+                  <label for="placeOfEmployment">Place of Employment</label
+                  ><select id="placeOfEmployment">
+                    <option value="">Select</option>
+                    <option>Underground</option>
+                    <option>Open cast</option>
+                    <option>Surface</option>
+                  </select>
+                </div>
+                <div class="field">
+                  <label for="firstAppointmentOwner"
+                    >Date of First Appointment with Owner</label
+                  ><input id="firstAppointmentOwner" type="date" />
+                </div>
+                <div class="field">
+                  <label for="newAppointments">New Appointments</label
+                  ><input id="newAppointments" maxlength="100" />
+                </div>
+              </div>
+            </details>
+            <details class="group">
+              <summary>Identity and statutory details</summary>
+              <div class="fields">
+                <div class="field">
+                  <label for="mobile">Mobile</label
+                  ><input id="mobile" type="tel" maxlength="20" />
+                </div>
+                <div class="field">
+                  <label for="uanNumber">UAN Number</label
+                  ><input id="uanNumber" maxlength="30" />
+                </div>
+                <div class="field">
+                  <label for="pan">PAN</label><input id="pan" maxlength="20" />
+                </div>
+                <div class="field">
+                  <label for="esic">ESIC</label
+                  ><input id="esic" maxlength="40" />
+                </div>
+                <div class="field">
+                  <label for="ip">IP</label><input id="ip" maxlength="40" />
+                </div>
+                <div class="field">
+                  <label for="lwf">LWF</label><input id="lwf" maxlength="40" />
+                </div>
+                <div class="field">
+                  <label for="aadhaar">Aadhaar</label
+                  ><input id="aadhaar" inputmode="numeric" maxlength="20" />
+                </div>
+                <div class="field">
+                  <label for="tokenNumber">Token Number Issued</label
+                  ><input id="tokenNumber" maxlength="40" />
+                </div>
+                <div class="field">
+                  <label for="addressCategory">Address Category</label
+                  ><input id="addressCategory" maxlength="80" />
+                </div>
+              </div>
+            </details>
+            <details class="group">
+              <summary>Bank details</summary>
+              <div class="fields">
+                <div class="field">
+                  <label for="bankAccount">Bank Account Number</label
+                  ><input id="bankAccount" inputmode="numeric" maxlength="40" />
+                </div>
+                <div class="field">
+                  <label for="bank">Bank</label
+                  ><input id="bank" maxlength="100" />
+                </div>
+                <div class="field">
+                  <label for="branchIfsc">Branch (IFSC)</label
+                  ><input id="branchIfsc" maxlength="30" />
+                </div>
+              </div>
+            </details>
+            <details class="group">
+              <summary>Addresses and nominee</summary>
+              <div class="fields">
+                <div class="field">
+                  <label for="presentAddress">Present Address</label
+                  ><textarea id="presentAddress" maxlength="400"></textarea>
+                </div>
+                <div class="field">
+                  <label for="permanentAddress">Permanent Address</label
+                  ><textarea id="permanentAddress" maxlength="400"></textarea>
+                </div>
+                <div class="field">
+                  <label for="nominee">Nominee</label
+                  ><input id="nominee" maxlength="100" />
+                </div>
+                <div class="field">
+                  <label for="nomineeAddress">Nominee Address</label
+                  ><textarea id="nomineeAddress" maxlength="400"></textarea>
+                </div>
+              </div>
+            </details>
+            <details class="group">
+              <summary>Safety, medical and training</summary>
+              <div class="fields">
+                <div class="field">
+                  <label for="identificationMark">Mark of Identification</label
+                  ><input id="identificationMark" maxlength="160" />
+                </div>
+                <div class="field">
+                  <label for="ageFitnessCertificate"
+                    >Age/Fitness Certificate (Ages 14–18)</label
+                  ><select id="ageFitnessCertificate">
+                    <option value="">Select</option>
+                    <option>Yes</option>
+                    <option>No</option>
+                    <option>Not applicable</option>
+                  </select>
+                </div>
+                <div class="field">
+                  <label for="medical">Medical</label
+                  ><input id="medical" maxlength="120" />
+                </div>
+                <div class="field">
+                  <label for="medicalDate">Medical Date</label
+                  ><input id="medicalDate" type="date" />
+                </div>
+                <div class="field">
+                  <label for="medicalExpiryDate"
+                    >Medical Expiry Date (Auto · 5 Years)</label
+                  ><input id="medicalExpiryDate" type="date" readonly />
+                </div>
+                <div class="field">
+                  <label for="bloodGroup">Blood Group</label
+                  ><select id="bloodGroup">
+                    <option value="">Select</option>
+                    <option>A+</option>
+                    <option>A-</option>
+                    <option>B+</option>
+                    <option>B-</option>
+                    <option>AB+</option>
+                    <option>AB-</option>
+                    <option>O+</option>
+                    <option>O-</option>
+                    <option>Unknown</option>
+                  </select>
+                </div>
+                <div class="field">
+                  <label for="vocationalTrainingNumber"
+                    >Certificate of Vocational Training Number</label
+                  ><input id="vocationalTrainingNumber" maxlength="100" />
+                </div>
+                <div class="field">
+                  <label for="vocationalTrainingDate"
+                    >Certificate of Vocational Training Date</label
+                  ><input id="vocationalTrainingDate" type="date" />
+                </div>
+                <div class="field">
+                  <label for="vocationalTrainingExpiryDate"
+                    >VTC Expiry Date (Auto · 5 Years)</label
+                  ><input
+                    id="vocationalTrainingExpiryDate"
+                    type="date"
+                    readonly
+                  />
+                </div>
+                <div class="field">
+                  <label for="vtBasic">VT Basic</label
+                  ><input id="vtBasic" maxlength="100" />
+                </div>
+                <div class="field">
+                  <label for="vtSpecial">VT Special</label
+                  ><input id="vtSpecial" maxlength="100" />
+                </div>
+                <div class="field">
+                  <label for="authorisation">Authorisation</label
+                  ><input id="authorisation" maxlength="100" />
+                </div>
+                <div class="field">
+                  <label for="authorisationDate">Authorisation Date</label
+                  ><input id="authorisationDate" type="date" />
+                </div>
+                <div class="field">
+                  <label for="authorisationExpiryDate"
+                    >Authorisation Expiry Date (Auto · 5 Years)</label
+                  ><input id="authorisationExpiryDate" type="date" readonly />
+                </div>
+              </div>
+            </details>
+            <details class="group">
+              <summary>Emergency contact and notes</summary>
+              <div class="fields">
+                <div class="field">
+                  <label for="emergencyContactName"
+                    >Emergency Contact Name</label
+                  ><input id="emergencyContactName" maxlength="100" />
+                </div>
+                <div class="field">
+                  <label for="emergencyContactRelation"
+                    >Emergency Contact Relation</label
+                  ><input id="emergencyContactRelation" maxlength="80" />
+                </div>
+                <div class="field">
+                  <label for="emergencyContactNumber"
+                    >Emergency Contact Number</label
+                  ><input
+                    id="emergencyContactNumber"
+                    type="tel"
+                    maxlength="20"
+                  />
+                </div>
+                <div class="field">
+                  <label for="emergencyContactAddress"
+                    >Emergency Contact Address</label
+                  ><textarea
+                    id="emergencyContactAddress"
+                    maxlength="400"
+                  ></textarea>
+                </div>
+                <div class="field">
+                  <label for="remarks">Remarks</label
+                  ><textarea id="remarks" maxlength="400"></textarea>
+                </div>
+              </div>
+            </details>
+            <div
+              class="validation"
+              id="validationAlerts"
+              aria-live="polite"
+            ></div>
+            <div class="formactions">
+              <button
+                class="secondary"
+                type="button"
+                id="cancelEdit"
+                style="display: none"
+              >
+                Cancel edit</button
+              ><button class="primary" type="submit" id="saveButton">
+                Save employee record
+              </button>
+            </div>
+            <p class="note">
+              Every detail is optional. You can save the record now and complete
+              it later. The employee code must be unique if entered.
+            </p>
+          </form>
+        </section>
+        <aside class="panel">
+          <div class="head">
+            <h2>Employee data tools</h2>
+            <span>Manage data separately</span>
+          </div>
+          <div class="listbody">
+            <a
+              class="export"
+              style="display: block; text-align: center; text-decoration: none"
+              href="employees-data.html"
+              >Open Employees Data</a
+            ><button class="export" id="exportCsv" type="button">
+              Export all employee records to CSV</button
+            ><label
+              class="field"
+              style="
+                display: block;
+                margin: 0 0 6px;
+                font-size: 11px;
+                font-weight: 700;
+                color: var(--muted);
+              "
+              >Choose employee CSV<input
+                class="csvinput"
+                id="csvFile"
+                type="file"
+                accept=".csv,text/csv"
+            /></label>
+            <p class="importstatus" id="importStatus">
+              Choose a CSV with a header row. Duplicate employee codes will be
+              skipped.
+            </p>
+            <button
+              class="primary importconfirm"
+              id="confirmImport"
+              type="button"
+              disabled
+            >
+              Import records
+            </button>
+            <p class="note">
+              Employee names and manpower details are shown on the Employees
+              Data page.
+            </p>
+          </div>
+        </aside>
+      </div>
+    </main>
+    <dialog class="detaildialog" id="detailDialog">
+      <div class="dialogbox">
+        <div class="dialoghead">
+          <div>
+            <h2 id="detailTitle">Employee details</h2>
+            <p id="detailSubtitle"></p>
+          </div>
+          <button
+            class="close"
+            type="button"
+            id="closeDetails"
+            aria-label="Close"
+          >
+            ×
+          </button>
+        </div>
+        <div class="detailgrid" id="detailGrid"></div>
+        <div class="dialogfoot">
+          <button class="secondary" type="button" id="closeDetailsFooter">
+            Close
+          </button>
+        </div>
+      </div>
+    </dialog>
+    <div class="toast" id="toast"></div>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script><script src="assets/js/supabase-config.js"></script><script src="assets/js/supabase-client.js"></script><script src="assets/js/app-bootstrap.js"></script><script>window.HRDB.boot().then(function(ready){if(!ready)return;var app=document.createElement("script");app.src="assets/js/employee-records.js";document.body.appendChild(app)}).catch(function(error){window.HRDB.status("Supabase connection failed: "+error.message,true)})</script>
+  </body>
+</html>
