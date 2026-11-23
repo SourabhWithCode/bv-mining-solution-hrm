@@ -5,11 +5,16 @@ create table if not exists public.audit_logs (
   actor_user_id uuid,
   actor_name text not null default 'System',
   actor_email text,
+  actor_role text,
   table_name text not null,
   action text not null check (action in ('INSERT','UPDATE','DELETE')),
   record_id text,
+  record_label text,
   changes jsonb not null default '{}'::jsonb
 );
+
+alter table public.audit_logs add column if not exists actor_role text;
+alter table public.audit_logs add column if not exists record_label text;
 
 create index if not exists audit_logs_event_at_idx on public.audit_logs(event_at desc);
 create index if not exists audit_logs_table_name_idx on public.audit_logs(table_name);
@@ -25,9 +30,58 @@ create policy audit_logs_read_admin on public.audit_logs
 create or replace view public.audit_logs_meaningful
 with (security_invoker = true)
 as
-  select * from public.audit_logs
-  where not (action = 'UPDATE' and changes ? 'updated_at' and jsonb_object_length(changes) = 1);
+  select audit.* from public.audit_logs as audit
+  where not (
+    audit.action = 'UPDATE'
+    and audit.changes ? 'updated_at'
+    and (select count(*) from jsonb_object_keys(audit.changes)) = 1
+  );
 grant select on public.audit_logs_meaningful to authenticated;
+
+-- Let an admin clear old history from the page while retaining a single audit
+-- event that records who cleared it and how many entries were removed.
+create or replace function public.clear_audit_history()
+returns integer
+language plpgsql
+security definer
+set search_path = public
+as $$
+declare
+  v_actor_id uuid := auth.uid();
+  v_actor_name text;
+  v_actor_email text;
+  v_actor_role text;
+  v_deleted integer;
+begin
+  if v_actor_id is null then
+    raise exception 'You must be signed in to clear audit history.' using errcode = '42501';
+  end if;
+
+  select coalesce(nullif(full_name,''), email), email, role
+    into v_actor_name, v_actor_email, v_actor_role
+    from public.user_profiles where id = v_actor_id;
+  if v_actor_role is distinct from 'admin' then
+    raise exception 'Only an admin can clear audit history.' using errcode = '42501';
+  end if;
+
+  delete from public.audit_logs where id is not null;
+  get diagnostics v_deleted = row_count;
+
+  insert into public.audit_logs(
+    actor_user_id, actor_name, actor_email, actor_role,
+    table_name, action, record_id, record_label, changes
+  ) values (
+    v_actor_id, coalesce(v_actor_name, 'Admin'), v_actor_email, v_actor_role,
+    'audit_logs', 'DELETE', 'history', 'Audit history cleared',
+    jsonb_build_object('deleted_entries', v_deleted)
+  );
+
+  return v_deleted;
+end;
+$$;
+
+revoke all on function public.clear_audit_history() from public, anon;
+grant execute on function public.clear_audit_history() to authenticated;
 
 create or replace function public.capture_audit_event()
 returns trigger
@@ -39,12 +93,14 @@ declare
   v_actor_id uuid := auth.uid();
   v_actor_name text := 'System';
   v_actor_email text;
+  v_actor_role text;
   v_old jsonb;
   v_new jsonb;
   v_record jsonb;
   v_changes jsonb := '{}'::jsonb;
   v_key text;
   v_record_id text;
+  v_record_label text;
   v_sensitive text[] := array[
     'aadhaar','pan','bank_account','mobile','uan_number','esic','ip','lwf',
     'present_address','permanent_address','emergency_contact_address',
@@ -61,8 +117,8 @@ begin
   end if;
 
   if v_actor_id is not null then
-    select coalesce(nullif(full_name,''), email), email
-      into v_actor_name, v_actor_email
+    select coalesce(nullif(full_name,''), email), email, role
+      into v_actor_name, v_actor_email, v_actor_role
       from public.user_profiles where id = v_actor_id;
     v_actor_name := coalesce(v_actor_name, v_actor_id::text);
   end if;
@@ -105,8 +161,28 @@ begin
     concat_ws(':', v_record ->> 'employee_id', coalesce(v_record ->> 'work_date', v_record ->> 'attendance_date', v_record ->> 'issue_date'))
   );
 
-  insert into public.audit_logs(actor_user_id,actor_name,actor_email,table_name,action,record_id,changes)
-  values(v_actor_id,coalesce(v_actor_name,'System'),v_actor_email,TG_TABLE_NAME,TG_OP,v_record_id,v_changes);
+  -- Build a human-readable subject from whichever identifying fields this table has.
+  v_record_label := coalesce(
+    nullif(concat_ws(' · ',
+      nullif(v_record ->> 'employee_code',''),
+      nullif(v_record ->> 'employee_name',''),
+      nullif(v_record ->> 'name',''),
+      nullif(v_record ->> 'item_name',''),
+      nullif(v_record ->> 'leave_type',''),
+      nullif(v_record ->> 'work_date',''),
+      nullif(v_record ->> 'attendance_date',''),
+      nullif(v_record ->> 'issue_date',''),
+      nullif(v_record ->> 'start_date',''),
+      nullif(v_record ->> 'shift',''),
+      nullif(v_record ->> 'status','')
+    ), ''),
+    nullif(v_record ->> 'email',''),
+    nullif(v_record ->> 'employee_id',''),
+    v_record_id
+  );
+
+  insert into public.audit_logs(actor_user_id,actor_name,actor_email,actor_role,table_name,action,record_id,record_label,changes)
+  values(v_actor_id,coalesce(v_actor_name,'System'),v_actor_email,v_actor_role,TG_TABLE_NAME,TG_OP,v_record_id,v_record_label,v_changes);
 
   if TG_OP = 'DELETE' then return OLD; end if;
   return NEW;

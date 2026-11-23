@@ -5,7 +5,7 @@
   const moduleNames = {
     user_profiles:'User management', employees:'Employees', shift_assignments:'Shift board',
     attendance:'Attendance', leave_requests:'Leave', ppe_items:'Stock items',
-    ppe_issues:'PPE issues', ppe_stock_movements:'Stock movements', overtime_entries:'Overtime'
+    ppe_issues:'PPE issues', ppe_stock_movements:'Stock movements', overtime_entries:'Overtime', audit_logs:'Audit history'
   };
   let events = [];
   let filteredEvents = [];
@@ -73,7 +73,8 @@
   async function loadAudit() {
     const table = $('auditTable');
     table.innerHTML = '<div class="empty">Loading audit history…</div>';
-    const { data, error } = await client.from('audit_logs_meaningful').select('*').order('event_at',{ascending:false}).limit(500);
+    // Query the protected base table directly; the meaningful-events view is optional.
+    const { data, error } = await client.from('audit_logs').select('*').order('event_at',{ascending:false}).limit(500);
     if (error) {
       table.innerHTML = `<div class="error">Could not load audit history: ${esc(error.message)}</div>`;
       $('auditSummary').textContent = '';
@@ -87,6 +88,26 @@
     renderAudit();
   }
 
+  $('clearAuditHistory').addEventListener('click', async () => {
+    const confirmed = window.confirm('Permanently delete all existing audit history? This cannot be undone. A new entry will record that you cleared it.');
+    if (!confirmed) return;
+    const button = $('clearAuditHistory');
+    button.disabled = true;
+    const originalLabel = button.textContent;
+    button.textContent = 'Clearing…';
+    const { data: deletedCount, error } = await client.rpc('clear_audit_history');
+    if (error) {
+      window.HRDB.status(`Could not clear audit history: ${error.message}`,true);
+      button.disabled = false;
+      button.textContent = originalLabel;
+      return;
+    }
+    window.HRDB.status(`Audit history cleared. ${Number(deletedCount) || 0} earlier entries were removed; the clear action was recorded.`);
+    button.disabled = false;
+    button.textContent = originalLabel;
+    await loadAudit();
+  });
+
   function renderAudit() {
     const query = $('auditSearch').value.trim().toLowerCase();
     const module = $('moduleFilter').value;
@@ -99,7 +120,7 @@
     filteredEvents = events.filter(event => {
       if (isTimestampOnlyUpdate(event)) return false;
       const day = String(event.event_at || '').slice(0,10);
-      const haystack = `${event.actor_name || ''} ${event.actor_email || ''} ${event.table_name || ''} ${event.action || ''} ${event.record_id || ''} ${JSON.stringify(event.changes || {})}`.toLowerCase();
+      const haystack = `${event.actor_name || ''} ${event.actor_role || ''} ${event.actor_email || ''} ${event.table_name || ''} ${event.action || ''} ${event.record_id || ''} ${event.record_label || ''} ${JSON.stringify(event.changes || {})}`.toLowerCase();
       return (!query || haystack.includes(query)) && (!module || event.table_name === module) && (!from || day >= from) && (!to || day <= to);
     });
     $('auditSummary').textContent = `Showing ${filteredEvents.length} meaningful events of ${events.length} loaded. ${timestampOnlyCount ? `${timestampOnlyCount} automatic timestamp-only updates hidden. ` : ''}Maximum 500 loaded.`;
@@ -107,11 +128,24 @@
       $('auditTable').innerHTML = '<div class="empty">No audit events match these filters.</div>';
       return;
     }
-    $('auditTable').innerHTML = `<table class="table"><thead><tr><th>Date / time</th><th>Actor</th><th>Action</th><th>Module</th><th>Record</th><th>Changes</th></tr></thead><tbody>${filteredEvents.map(event => {
+    $('auditTable').innerHTML = `<table class="table"><thead><tr><th>Date / time</th><th>Who</th><th>Event</th><th>Record</th><th>What changed</th></tr></thead><tbody>${filteredEvents.map(event => {
       const changes = event.changes || {};
       const keys = Object.keys(changes).filter(key => !['before','after'].includes(key));
-      const summary = keys.length ? keys.join(', ') : event.action === 'INSERT' ? 'New record' : event.action === 'DELETE' ? 'Record removed' : 'Record updated';
-      return `<tr><td>${esc(formatDate(event.event_at))}</td><td><strong>${esc(event.actor_name || 'System')}</strong><div class="muted">${esc(event.actor_email || '')}</div></td><td><span class="status status-${esc(event.action.toLowerCase())}">${esc(event.action)}</span></td><td>${esc(moduleNames[event.table_name] || event.table_name)}</td><td>${esc(event.record_id || '—')}</td><td><details><summary>${esc(summary)}</summary><pre>${esc(JSON.stringify(changes,null,2))}</pre></details></td></tr>`;
+      const module = moduleNames[event.table_name] || event.table_name;
+      const statusChange = changes.status?.after;
+      const decision = event.table_name === 'leave_requests' && statusChange
+        ? `Leave ${String(statusChange).toLowerCase()}`
+        : event.action === 'INSERT' ? `New ${module} entry` : event.action === 'DELETE' ? `${module} entry deleted` : `${module} updated`;
+      const summary = keys.length ? keys.map(key => key.replace(/_/g,' ').replace(/\b\w/g,letter => letter.toUpperCase())).join(', ')
+        : event.action === 'INSERT' ? 'New entry added' : event.action === 'DELETE' ? 'Entry removed' : 'Entry updated';
+      let detailText = JSON.stringify(changes,null,2);
+      if (keys.length) detailText = keys.map(key => {
+        const change = changes[key];
+        const before = change && typeof change === 'object' && 'before' in change ? change.before : '—';
+        const after = change && typeof change === 'object' && 'after' in change ? change.after : change;
+        return `${key.replace(/_/g,' ').replace(/\b\w/g,letter => letter.toUpperCase())}: ${JSON.stringify(before)} → ${JSON.stringify(after)}`;
+      }).join('\n');
+      return `<tr><td>${esc(formatDate(event.event_at))}</td><td><strong>${esc(event.actor_name || 'System')}</strong><div class="muted">${esc(event.actor_role || 'Role not recorded')}${event.actor_email ? ` · ${esc(event.actor_email)}` : ''}</div></td><td><span class="status status-${esc(event.action.toLowerCase())}">${esc(decision)}</span></td><td><strong>${esc(event.record_label || event.record_id || '—')}</strong><div class="muted">${esc(module)}</div></td><td><details><summary>${esc(summary)}</summary><pre>${esc(detailText)}</pre></details></td></tr>`;
     }).join('')}</tbody></table>`;
   }
 
@@ -121,7 +155,7 @@
     return `"${text.replace(/"/g,'""')}"`;
   }
   $('exportAudit').addEventListener('click',() => {
-    const rows = [['Date / time','Actor','Email','Action','Module','Record ID','Changes'],...filteredEvents.map(event => [event.event_at,event.actor_name,event.actor_email,event.action,moduleNames[event.table_name] || event.table_name,event.record_id,JSON.stringify(event.changes || {})])];
+    const rows = [['Date / time','User','Role','Email','Event','Module','Record','Record ID','Changes'],...filteredEvents.map(event => [event.event_at,event.actor_name,event.actor_role,event.actor_email,event.table_name === 'leave_requests' && event.changes?.status?.after ? `Leave ${event.changes.status.after}` : event.action,moduleNames[event.table_name] || event.table_name,event.record_label,event.record_id,JSON.stringify(event.changes || {})])];
     const blob = new Blob(['\ufeff'+rows.map(row => row.map(csvCell).join(',')).join('\r\n')],{type:'text/csv;charset=utf-8'});
     const url = URL.createObjectURL(blob), anchor = document.createElement('a');
     anchor.href = url; anchor.download = 'bv-mining-audit-log.csv'; anchor.click();
