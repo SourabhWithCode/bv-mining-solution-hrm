@@ -73,7 +73,7 @@
   async function loadAudit() {
     const table = $('auditTable');
     table.innerHTML = '<div class="empty">Loading audit history…</div>';
-    const { data, error } = await client.from('audit_logs').select('*').order('event_at',{ascending:false}).limit(500);
+    const { data, error } = await client.from('audit_logs_meaningful').select('*').order('event_at',{ascending:false}).limit(500);
     if (error) {
       table.innerHTML = `<div class="error">Could not load audit history: ${esc(error.message)}</div>`;
       $('auditSummary').textContent = '';
@@ -92,12 +92,17 @@
     const module = $('moduleFilter').value;
     const from = $('fromDate').value;
     const to = $('toDate').value;
+    const isTimestampOnlyUpdate = event => event.action === 'UPDATE'
+      && Object.keys(event.changes || {}).length === 1
+      && Object.prototype.hasOwnProperty.call(event.changes || {}, 'updated_at');
+    const timestampOnlyCount = events.filter(isTimestampOnlyUpdate).length;
     filteredEvents = events.filter(event => {
+      if (isTimestampOnlyUpdate(event)) return false;
       const day = String(event.event_at || '').slice(0,10);
       const haystack = `${event.actor_name || ''} ${event.actor_email || ''} ${event.table_name || ''} ${event.action || ''} ${event.record_id || ''} ${JSON.stringify(event.changes || {})}`.toLowerCase();
       return (!query || haystack.includes(query)) && (!module || event.table_name === module) && (!from || day >= from) && (!to || day <= to);
     });
-    $('auditSummary').textContent = `Showing ${filteredEvents.length} of ${events.length} audit events (maximum 500 loaded).`;
+    $('auditSummary').textContent = `Showing ${filteredEvents.length} meaningful events of ${events.length} loaded. ${timestampOnlyCount ? `${timestampOnlyCount} automatic timestamp-only updates hidden. ` : ''}Maximum 500 loaded.`;
     if (!filteredEvents.length) {
       $('auditTable').innerHTML = '<div class="empty">No audit events match these filters.</div>';
       return;

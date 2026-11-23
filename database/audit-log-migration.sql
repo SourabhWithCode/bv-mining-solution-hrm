@@ -21,6 +21,14 @@ drop policy if exists audit_logs_read_admin on public.audit_logs;
 create policy audit_logs_read_admin on public.audit_logs
   for select to authenticated using (public.has_any_role(array['admin']));
 
+-- Exclude app syncs that only refreshed metadata timestamps from the admin view.
+create or replace view public.audit_logs_meaningful
+with (security_invoker = true)
+as
+  select * from public.audit_logs
+  where not (action = 'UPDATE' and changes ? 'updated_at' and jsonb_object_length(changes) = 1);
+grant select on public.audit_logs_meaningful to authenticated;
+
 create or replace function public.capture_audit_event()
 returns trigger
 language plpgsql
@@ -72,6 +80,8 @@ begin
     v_new := to_jsonb(NEW);
     v_record := to_jsonb(NEW);
     for v_key in select jsonb_object_keys(v_old || v_new) loop
+      -- App syncs may refresh this metadata field while upserting an unchanged row.
+      if v_key = 'updated_at' then continue; end if;
       if (v_old -> v_key) is distinct from (v_new -> v_key) then
         v_changes := v_changes || jsonb_build_object(
           v_key,
