@@ -32,5 +32,4 @@ function moveDate(amount){
 $('dashboardDate').addEventListener('change',e=>{selectedDate=e.target.value||today();render()});
 $('prevDate').addEventListener('click',()=>moveDate(-1));
 $('nextDate').addEventListener('click',()=>moveDate(1));
-$('todayBtn').addEventListener('click',()=>{selectedDate=today();render()});
 render();window.addEventListener('storage',render);

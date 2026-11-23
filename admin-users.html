@@ -13,7 +13,7 @@
       <div class="brand"><div class="mark">BV</div><div><strong>BV Mining Solution</strong><small>Administrator controls</small></div></div>
       <nav class="links"><a class="link" href="index.html">HR Home</a></nav>
     </header>
-    <section class="hero"><div class="eyebrow">Access control</div><h1>User management</h1><p>Create accounts for HR, supervisors, viewers, or another administrator.</p></section>
+    <section class="hero"><div class="eyebrow">Access control</div><h1>User management</h1><p>Create accounts for the BV Mining Solution team and assign each role its app access.</p></section>
     <section class="grid">
       <article class="panel">
         <div class="head"><h2>Create an account</h2><p>Give the new user their temporary password securely. They can change it after signing in.</p></div>
@@ -21,7 +21,7 @@
           <label class="label" for="fullName">Employee name</label><input class="field" id="fullName" name="fullName" autocomplete="name" required maxlength="120">
           <label class="label" for="designation">Designation</label><input class="field" id="designation" name="designation" placeholder="e.g. Mine Mate" required maxlength="80">
           <label class="label" for="email">Login email</label><input class="field" id="email" name="email" type="email" autocomplete="email" required>
-          <label class="label" for="role">Access role</label><select class="field" id="role" name="role" required><option value="viewer">Viewer — view assigned pages</option><option value="supervisor">Supervisor — shifts and attendance</option><option value="hr">HR — employee and HR records</option><option value="admin">Admin — full access and user management</option></select>
+          <label class="label" for="role">Access role</label><select class="field" id="role" name="role" required><option value="accountant">Accountant — dashboard and leave</option><option value="hr">HR — employee, attendance and HR records</option><option value="store">Store — PPE issues and stock management</option><option value="mechanical">Mechanical — dashboard and leave</option><option value="mine_mate">Mine Mate — shift board and leave</option><option value="foreman">Foreman — shift board and leave</option><option value="project_manager">Project Manager — dashboard and leave</option><option value="assistant_project_manager">Assistant Project Manager — dashboard and leave</option><option value="admin">Admin — full access and user management</option></select>
           <label class="label" for="password">Temporary password</label><input class="field" id="password" name="password" type="password" autocomplete="new-password" minlength="6" maxlength="12" required><small class="hint">Use 6 to 12 characters. Do not reuse your own password.</small>
           <button class="primary" id="createButton" type="submit">Create user</button>
           <div class="feedback" id="feedback" role="status" aria-live="polite"></div>
@@ -29,9 +29,21 @@
       </article>
       <article class="panel users-panel">
         <div class="head rowhead"><div><h2>Application users</h2><p>Accounts and roles registered in this app.</p></div><button class="secondary" id="refreshUsers" type="button">Refresh</button></div>
-        <div class="tablewrap"><table><thead><tr><th>Name</th><th>Email</th><th>Designation</th><th>Access role</th><th>Created</th></tr></thead><tbody id="userRows"><tr><td class="empty" colspan="5">Loading users…</td></tr></tbody></table></div>
+        <div class="tablewrap"><table><thead><tr><th>Name</th><th>Email</th><th>Designation</th><th>Access role</th><th>Created</th><th>Actions</th></tr></thead><tbody id="userRows"><tr><td class="empty" colspan="6">Loading users…</td></tr></tbody></table></div>
       </article>
     </section>
+    <dialog class="edit-dialog" id="editUserDialog" aria-labelledby="editUserTitle">
+      <form id="editUserForm" class="body">
+        <div class="head dialog-head"><h2 id="editUserTitle">Edit application user</h2><p>Update the user's profile or access role. Login email is read-only here.</p></div>
+        <input type="hidden" id="editUserId" name="userId">
+        <label class="label" for="editFullName">Employee name</label><input class="field" id="editFullName" name="fullName" required maxlength="120">
+        <label class="label" for="editDesignation">Designation</label><input class="field" id="editDesignation" name="designation" required maxlength="80">
+        <label class="label" for="editEmail">Login email</label><input class="field" id="editEmail" name="email" type="email" readonly>
+        <label class="label" for="editRole">Access role</label><select class="field" id="editRole" name="role" required><option value="accountant">Accountant — dashboard and leave</option><option value="hr">HR — employee, attendance and HR records</option><option value="store">Store — PPE issues and stock management</option><option value="mechanical">Mechanical — dashboard and leave</option><option value="mine_mate">Mine Mate — shift board and leave</option><option value="foreman">Foreman — shift board and leave</option><option value="project_manager">Project Manager — dashboard and leave</option><option value="assistant_project_manager">Assistant Project Manager — dashboard and leave</option><option value="admin">Admin — full access and user management</option></select>
+        <div class="dialog-actions"><button class="secondary" id="cancelEdit" type="button">Cancel</button><button class="primary dialog-save" id="saveUser" type="submit">Save changes</button></div>
+        <div class="dialog-feedback" id="editFeedback" role="status" aria-live="polite"></div>
+      </form>
+    </dialog>
   </main>
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <script src="assets/js/supabase-config.js"></script>

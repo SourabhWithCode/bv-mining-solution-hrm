@@ -25,10 +25,12 @@ grant select, insert, update, delete on public.overtime_entries to authenticated
 drop policy if exists "overtime read authenticated roles" on public.overtime_entries;
 create policy "overtime read authenticated roles" on public.overtime_entries
   for select to authenticated
-  using (public.has_any_role(array['admin', 'hr', 'supervisor', 'viewer']));
+  using (public.has_any_role(array['admin','hr','accountant','store','mechanical','mine_mate','foreman','project_manager','assistant_project_manager']));
 
 drop policy if exists "overtime manage by HR or supervisor" on public.overtime_entries;
 create policy "overtime manage by HR or supervisor" on public.overtime_entries
-  for all to authenticated
-  using (public.has_any_role(array['admin', 'hr', 'supervisor']))
-  with check (public.has_any_role(array['admin', 'hr', 'supervisor']));
+  for insert to authenticated with check (public.has_any_role(array['admin','mine_mate','foreman']));
+create policy "overtime update by admin" on public.overtime_entries
+  for update to authenticated using (public.has_any_role(array['admin'])) with check (public.has_any_role(array['admin']));
+create policy "overtime delete by admin" on public.overtime_entries
+  for delete to authenticated using (public.has_any_role(array['admin']));

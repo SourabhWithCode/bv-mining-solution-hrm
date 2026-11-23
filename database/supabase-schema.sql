@@ -6,8 +6,8 @@ create extension if not exists pgcrypto;
 create table if not exists public.user_profiles (
   id uuid primary key references auth.users(id) on delete cascade,
   email text not null,
-  role text not null default 'viewer'
-    check (role in ('admin', 'hr', 'supervisor', 'viewer')),
+  role text not null default 'accountant'
+    check (role in ('admin','hr','accountant','store','mechanical','mine_mate','foreman','project_manager','assistant_project_manager')),
   created_at timestamptz not null default now()
 );
 
@@ -19,7 +19,7 @@ set search_path = public
 as $$
 begin
   insert into public.user_profiles (id, email, role)
-  values (new.id, coalesce(new.email, ''), 'viewer')
+  values (new.id, coalesce(new.email, ''), 'accountant')
   on conflict (id) do update set email = excluded.email;
   return new;
 end;
@@ -185,7 +185,7 @@ create table if not exists public.attendance (
   id uuid primary key default gen_random_uuid(),
   employee_id uuid not null references public.employees(id) on delete restrict,
   attendance_date date not null,
-  status text not null check (status in ('Present', 'Absent', 'Late', 'Half day')),
+  status text check (status in ('Present', 'Absent', 'Late', 'Half day')),
   updated_by uuid references auth.users(id) on delete set null,
   updated_at timestamptz not null default now(),
   unique (employee_id, attendance_date)
@@ -283,63 +283,75 @@ create policy "employees read authenticated roles" on public.employees
   for select to authenticated
   using (public.has_any_role(array['admin', 'hr']));
 create policy "employees manage by HR" on public.employees
-  for all to authenticated
-  using (public.has_any_role(array['admin', 'hr']))
-  with check (public.has_any_role(array['admin', 'hr']));
+  for insert to authenticated with check (public.has_any_role(array['admin','hr']));
+create policy "employees update by admin" on public.employees
+  for update to authenticated using (public.has_any_role(array['admin'])) with check (public.has_any_role(array['admin']));
+create policy "employees delete by admin" on public.employees
+  for delete to authenticated using (public.has_any_role(array['admin']));
 
 create policy "shifts read authenticated roles" on public.shift_assignments
   for select to authenticated
-  using (public.has_any_role(array['admin', 'hr', 'supervisor', 'viewer']));
+  using (public.has_any_role(array['admin','hr','accountant','store','mechanical','mine_mate','foreman','project_manager','assistant_project_manager']));
 create policy "shifts manage by HR or supervisor" on public.shift_assignments
-  for all to authenticated
-  using (public.has_any_role(array['admin', 'hr', 'supervisor']))
-  with check (public.has_any_role(array['admin', 'hr', 'supervisor']));
+  for insert to authenticated with check (public.has_any_role(array['admin','mine_mate','foreman']));
+create policy "shifts update by admin" on public.shift_assignments
+  for update to authenticated using (public.has_any_role(array['admin'])) with check (public.has_any_role(array['admin']));
+create policy "shifts delete by admin" on public.shift_assignments
+  for delete to authenticated using (public.has_any_role(array['admin']));
 
 create policy "attendance read authenticated roles" on public.attendance
   for select to authenticated
-  using (public.has_any_role(array['admin', 'hr', 'supervisor', 'viewer']));
+  using (public.has_any_role(array['admin','hr','mine_mate','foreman']));
 create policy "attendance manage by HR or supervisor" on public.attendance
-  for all to authenticated
-  using (public.has_any_role(array['admin', 'hr', 'supervisor']))
-  with check (public.has_any_role(array['admin', 'hr', 'supervisor']));
+  for insert to authenticated with check (public.has_any_role(array['admin','hr','mine_mate','foreman']));
+create policy "attendance update by admin" on public.attendance
+  for update to authenticated using (public.has_any_role(array['admin'])) with check (public.has_any_role(array['admin']));
+create policy "attendance delete by admin" on public.attendance
+  for delete to authenticated using (public.has_any_role(array['admin']));
 
 create policy "leave read HR or requester" on public.leave_requests
   for select to authenticated
-  using (public.has_any_role(array['admin', 'hr', 'supervisor']) or submitted_by = (select auth.uid()));
+  using (public.has_any_role(array['admin']) or submitted_by = (select auth.uid()));
 create policy "leave submit authenticated" on public.leave_requests
   for insert to authenticated
-  with check (submitted_by = (select auth.uid()));
+  with check (public.has_any_role(array['admin','hr','accountant','store','mechanical','mine_mate','foreman','project_manager','assistant_project_manager']));
 create policy "leave review by HR" on public.leave_requests
   for update to authenticated
-  using (public.has_any_role(array['admin', 'hr']))
-  with check (public.has_any_role(array['admin', 'hr']));
+  using (public.has_any_role(array['admin']))
+  with check (public.has_any_role(array['admin']));
 create policy "leave delete by HR" on public.leave_requests
   for delete to authenticated
-  using (public.has_any_role(array['admin', 'hr']));
+  using (public.has_any_role(array['admin']));
 
 create policy "PPE items read authenticated roles" on public.ppe_items
   for select to authenticated
-  using (public.has_any_role(array['admin', 'hr', 'supervisor', 'viewer']));
+  using (public.has_any_role(array['admin','hr','accountant','store','mechanical','mine_mate','foreman','project_manager','assistant_project_manager']));
 create policy "PPE items manage by HR" on public.ppe_items
-  for all to authenticated
-  using (public.has_any_role(array['admin', 'hr']))
-  with check (public.has_any_role(array['admin', 'hr']));
+  for insert to authenticated with check (public.has_any_role(array['admin','store']));
+create policy "PPE items update by admin" on public.ppe_items
+  for update to authenticated using (public.has_any_role(array['admin'])) with check (public.has_any_role(array['admin']));
+create policy "PPE items delete by admin" on public.ppe_items
+  for delete to authenticated using (public.has_any_role(array['admin']));
 
 create policy "PPE issues read authenticated roles" on public.ppe_issues
   for select to authenticated
-  using (public.has_any_role(array['admin', 'hr', 'supervisor', 'viewer']));
+  using (public.has_any_role(array['admin','hr','accountant','store','mechanical','mine_mate','foreman','project_manager','assistant_project_manager']));
 create policy "PPE issues manage by HR" on public.ppe_issues
-  for all to authenticated
-  using (public.has_any_role(array['admin', 'hr']))
-  with check (public.has_any_role(array['admin', 'hr']));
+  for insert to authenticated with check (public.has_any_role(array['admin','store']));
+create policy "PPE issues update by admin" on public.ppe_issues
+  for update to authenticated using (public.has_any_role(array['admin'])) with check (public.has_any_role(array['admin']));
+create policy "PPE issues delete by admin" on public.ppe_issues
+  for delete to authenticated using (public.has_any_role(array['admin']));
 
 create policy "PPE movements read authenticated roles" on public.ppe_stock_movements
   for select to authenticated
-  using (public.has_any_role(array['admin', 'hr', 'supervisor', 'viewer']));
+  using (public.has_any_role(array['admin','hr','accountant','store','mechanical','mine_mate','foreman','project_manager','assistant_project_manager']));
 create policy "PPE movements manage by HR" on public.ppe_stock_movements
-  for all to authenticated
-  using (public.has_any_role(array['admin', 'hr']))
-  with check (public.has_any_role(array['admin', 'hr']));
+  for insert to authenticated with check (public.has_any_role(array['admin','store']));
+create policy "PPE movements update by admin" on public.ppe_stock_movements
+  for update to authenticated using (public.has_any_role(array['admin'])) with check (public.has_any_role(array['admin']));
+create policy "PPE movements delete by admin" on public.ppe_stock_movements
+  for delete to authenticated using (public.has_any_role(array['admin']));
 
 -- After creating your first Supabase Auth user, promote that account to admin:
 -- update public.user_profiles set role = 'admin' where email = 'your-email@example.com';

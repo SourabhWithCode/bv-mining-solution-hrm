@@ -1,0 +1,46 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>Audit Log & Approvals | BV Mining Solution</title>
+  <link rel="stylesheet" href="assets/css/audit-log.css">
+  <link rel="stylesheet" href="assets/css/responsive.css">
+</head>
+<body>
+  <main class="shell">
+    <header class="top">
+      <div class="brand"><div class="mark">BV</div><div><strong>BV Mining Solution</strong><small>Administration</small></div></div>
+      <a class="back-link" href="index.html">Dashboard</a>
+    </header>
+    <section class="hero">
+      <div class="eyebrow">Administrator only</div>
+      <h1>Audit Log & Approvals</h1>
+      <p>Review pending leave requests and see a protected history of application data changes.</p>
+    </section>
+
+    <section class="panel approvals-panel">
+      <div class="panel-head"><div><h2>Pending leave approvals</h2><p>Approving or rejecting a request is recorded in the audit log.</p></div><span class="count" id="pendingCount">0 pending</span></div>
+      <div class="table-wrap" id="approvals"><div class="empty">Loading approvals…</div></div>
+    </section>
+
+    <section class="panel audit-panel">
+      <div class="panel-head"><div><h2>Audit history</h2><p>Latest 500 recorded changes. Sensitive personal fields are omitted.</p></div><button class="button secondary" id="exportAudit" type="button">Export CSV</button></div>
+      <div class="filters">
+        <input id="auditSearch" type="search" placeholder="Search user, module, or record..." aria-label="Search audit history">
+        <select id="moduleFilter" aria-label="Filter by module"><option value="">All modules</option></select>
+        <label>From <input id="fromDate" type="date"></label>
+        <label>To <input id="toDate" type="date"></label>
+        <button class="button" id="clearFilters" type="button">Clear</button>
+      </div>
+      <div class="table-wrap" id="auditTable"><div class="empty">Loading audit history…</div></div>
+      <div class="footnote" id="auditSummary"></div>
+    </section>
+  </main>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="assets/js/supabase-config.js"></script>
+  <script src="assets/js/supabase-client.js"></script>
+  <script src="assets/js/app-bootstrap.js"></script>
+  <script>window.HRDB.boot().then(function(ready){if(!ready)return;var page=document.createElement('script');page.src='assets/js/audit-log.js';document.body.appendChild(page)}).catch(function(error){window.HRDB.status('Supabase connection failed: '+error.message,true)})</script>
+</body>
+</html>

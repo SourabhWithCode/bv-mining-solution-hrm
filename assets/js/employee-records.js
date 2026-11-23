@@ -545,6 +545,10 @@ function previewCsv(text) {
     }
     if (code) seen.add(code);
     if (code && existing.has(code)) {
+      if (window.HRDB.role !== "admin") {
+        duplicates++;
+        continue;
+      }
       const merged = Object.fromEntries(
         Object.entries(values).filter(([, v]) => String(v || "").trim() !== ""),
       );

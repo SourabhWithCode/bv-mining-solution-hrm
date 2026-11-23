@@ -25,7 +25,7 @@ begin
     coalesce(new.email, ''),
     coalesce(nullif(new.raw_user_meta_data->>'full_name',''), nullif(new.raw_user_meta_data->>'name',''), ''),
     coalesce(nullif(new.raw_user_meta_data->>'designation',''), ''),
-    'viewer'
+    'accountant'
   )
   on conflict (id) do update
     set email = excluded.email,

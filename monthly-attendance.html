@@ -1,0 +1,42 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>Monthly Attendance | BV Mining Solution</title>
+  <link rel="stylesheet" href="assets/css/monthly-attendance.css">
+  <link rel="stylesheet" href="assets/css/responsive.css">
+</head>
+<body>
+  <main class="shell">
+    <header class="top">
+      <div class="brand"><div class="mark">BV</div><div><strong>BV Mining Solution</strong><small>Attendance management</small></div></div>
+      <nav class="links"><a class="link" href="index.html">HR Home</a><a class="link" href="attendance.html">Daily Attendance</a></nav>
+    </header>
+    <section class="hero"><div class="eyebrow">Monthly overview</div><h1>Monthly Attendance</h1><p>Review each employee's attendance day by day for the selected month.</p></section>
+    <section class="panel controls">
+      <label for="month">Select month</label><input type="month" id="month">
+      <input type="search" id="search" placeholder="Search by Employee Code or name..." aria-label="Search employees">
+      <button class="button" id="export" type="button">Export CSV</button>
+      <span class="summary-text" id="summary">Loading attendance…</span>
+    </section>
+    <section class="stats">
+      <div class="stat">Employees shown<b id="employeeTotal">0</b></div>
+      <div class="stat">Present days<b id="presentTotal">0</b></div>
+      <div class="stat">Absent days<b id="absentTotal">0</b></div>
+      <div class="stat">Late days<b id="lateTotal">0</b></div>
+      <div class="stat">Half days<b id="halfTotal">0</b></div>
+    </section>
+    <section class="panel">
+      <div class="table-heading"><h2 id="monthTitle">Attendance register</h2><div class="legend"><span><i class="p"></i>Present</span><span><i class="a"></i>Absent</span><span><i class="l"></i>Late</span><span><i class="h"></i>Half day</span><span><i class="r"></i>Rest</span></div></div>
+      <div class="tablewrap" id="tablewrap"><div class="empty">Loading monthly attendance…</div></div>
+    </section>
+    <p class="note">Scheduled shifts without a saved status are displayed as Present. A deleted attendance record for a scheduled shift remains unmarked. Rest days and unscheduled days are shown separately.</p>
+  </main>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="assets/js/supabase-config.js"></script>
+  <script src="assets/js/supabase-client.js"></script>
+  <script src="assets/js/app-bootstrap.js"></script>
+  <script>window.HRDB.boot().then(function(ready){if(!ready)return;var app=document.createElement('script');app.src='assets/js/monthly-attendance.js';document.body.appendChild(app)}).catch(function(error){window.HRDB.status('Supabase connection failed: '+error.message,true)})</script>
+</body>
+</html>

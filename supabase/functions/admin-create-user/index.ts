@@ -1,10 +1,5 @@
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
-
-const corsHeaders={
-  'Access-Control-Allow-Origin':'*',
-  'Access-Control-Allow-Headers':'authorization, apikey, x-client-info, content-type',
-  'Access-Control-Allow-Methods':'POST, OPTIONS',
-};
+import { corsHeaders } from 'https://esm.sh/@supabase/supabase-js@2/cors';
 const json=(body:Record<string,unknown>,status=200)=>new Response(JSON.stringify(body),{status,headers:{...corsHeaders,'Content-Type':'application/json'}});
 
 function apiKey(legacyName:string,mapName:string):string|null{
@@ -46,9 +41,9 @@ Deno.serve(async req=>{
   if(!designation||designation.length>80)return json({error:'Enter a designation up to 80 characters.'},400);
   if(!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email))return json({error:'Enter a valid email address.'},400);
   if(password.length<6||password.length>12)return json({error:'Temporary password must be 6 to 12 characters.'},400);
-  if(!['admin','hr','supervisor','viewer'].includes(role))return json({error:'Choose a valid access role.'},400);
+  if(!['admin','hr','accountant','store','mechanical','mine_mate','foreman','project_manager','assistant_project_manager'].includes(role))return json({error:'Choose a valid access role.'},400);
 
-  const admin=createClient(url,secret,{auth:{persistSession:false,autoRefreshToken:false}});
+  const admin=createClient(url,secret,{global:{headers:{'x-audit-actor-id':userData.user.id}},auth:{persistSession:false,autoRefreshToken:false}});
   const {data:created,error:createError}=await admin.auth.admin.createUser({email,password,email_confirm:true,user_metadata:{full_name:fullName,designation}});
   if(createError)return json({error:createError.message},400);
   if(!created.user)return json({error:'Supabase did not return the new account.'},500);
