@@ -199,6 +199,7 @@
       }
       .otbar {
         display: flex;
+        flex-wrap: wrap;
         gap: 9px;
         align-items: center;
         background: #fffaf0;
@@ -275,6 +276,8 @@
         padding: 7px 8px;
         font: 12px "DM Sans";
       }
+      .panelhead .report-export{font-size:12px;padding:9px 12px;white-space:nowrap}
+      .employee-code{display:block;margin:4px 0 0 45px;color:var(--muted);font-size:10px}
       .person {
         display: flex;
         gap: 11px;
@@ -486,6 +489,8 @@
         .today-btn {
           padding: 9px 11px;
         }
+        .panelhead{align-items:flex-start;gap:10px;flex-wrap:wrap;padding:15px}
+        .panelhead .report-export{white-space:normal}
         .brand strong {
           font-size: 17px;
         }

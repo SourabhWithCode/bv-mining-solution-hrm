@@ -9,6 +9,34 @@
   const editFeedback = document.getElementById('editFeedback');
   const saveButton = document.getElementById('saveUser');
   const roleName = { admin: 'Admin', hr: 'HR', accountant: 'Accountant', store: 'Store', mechanical: 'Mechanical', mine_mate: 'Mine Mate', foreman: 'Foreman', project_manager: 'Project Manager', assistant_project_manager: 'Assistant Project Manager' };
+  const roles = ['admin','hr','accountant','store','mechanical','mine_mate','foreman','project_manager','assistant_project_manager'];
+  const pages = [
+    ['dashboard','Dashboard',roles],['employee_records','Employee Records',['admin','hr']],['employees_data','Employees Data',['admin','hr']],
+    ['shift_board','Shift Board',['admin','mine_mate','foreman']],['mining_report','Mining Report',['admin','mine_mate','foreman']],
+    ['attendance','Attendance',['admin','hr']],['monthly_attendance','Monthly Attendance',['admin','hr']],['leave','Leave',roles],
+    ['stock_management','Stock Management',['admin','store']],['ppe_issue_records','PPE Issue Records',['admin','store']],
+    ['stock_returns','Stock & Returns',['admin','store']],['reports','Reports',['admin','hr']],['audit_log','Audit Log & Approvals',['admin']],['user_management','User Management',['admin']]
+  ];
+  const adminOnlyPages=new Set(['audit_log','user_management']);
+  const defaultAccess = role => Object.fromEntries(pages.filter(([, , allowed])=>allowed.includes(role)).map(([key])=>[key,true]));
+  const selectedKeys = (access,role) => {
+    if(role==='admin')return pages.map(([key])=>key);
+    const effective=access&&Object.keys(access).length?access:defaultAccess(role);
+    return pages.filter(([key])=>!adminOnlyPages.has(key)&&effective[key]===true).map(([key])=>key);
+  };
+  function renderAccessOptions(container,role,access){
+    const isAdmin=role==='admin';const selected=new Set(selectedKeys(access,role));
+    container.replaceChildren();
+    pages.forEach(([key,label,allowed])=>{
+      const canGrant=isAdmin||!adminOnlyPages.has(key);const item=document.createElement('label');item.className=`access-option${canGrant?'':' unavailable'}`;
+      const checkbox=document.createElement('input');checkbox.type='checkbox';checkbox.name='pageAccess';checkbox.value=key;checkbox.checked=isAdmin||selected.has(key);checkbox.disabled=isAdmin||!canGrant||key==='dashboard';
+      const text=document.createElement('span');text.textContent=label;
+      item.append(checkbox,text);if(!canGrant){const hint=document.createElement('small');hint.textContent='Admin only';item.append(hint)}container.append(item);
+    });
+    const note=document.createElement('p');note.className='access-note';note.textContent=isAdmin?'Admin has full access to every page.':'Choose any page for this user. Dashboard access is always on; Audit Log and User Management are Admin only.';container.append(note);
+  }
+  const collectAccess=(container,role)=>role==='admin'?Object.fromEntries(pages.map(([key])=>[key,true])):Object.fromEntries([...container.querySelectorAll('input[name="pageAccess"]:checked')].map(input=>[input.value,true]));
+  const accessSummary=(user)=>user.role==='admin'?'Full access':selectedKeys(user.page_access,user.role).map(key=>pages.find(page=>page[0]===key)?.[1]).filter(Boolean).join(', ')||'Dashboard only';
 
   function setMessage(target, text, error = false) {
     target.textContent = text;
@@ -41,21 +69,22 @@
     document.getElementById('editDesignation').value = user.designation || '';
     document.getElementById('editEmail').value = user.email || '';
     document.getElementById('editRole').value = user.role || 'accountant';
+    renderAccessOptions(document.getElementById('editPageAccessOptions'),user.role||'accountant',user.page_access);
     setMessage(editFeedback, '');
     dialog.showModal();
     document.getElementById('editFullName').focus();
   }
 
   async function loadUsers() {
-    rows.innerHTML = '<tr><td class="empty" colspan="6">Loading users…</td></tr>';
+    rows.innerHTML = '<tr><td class="empty" colspan="7">Loading users…</td></tr>';
     const { data, error } = await client.from('user_profiles')
-      .select('id,full_name,designation,email,role,created_at')
+      .select('id,full_name,designation,email,role,page_access,created_at')
       .order('created_at', { ascending: false });
     if (error) {
       rows.replaceChildren();
       const row = document.createElement('tr');
       const cell = addCell(row, `Could not load users: ${error.message}`);
-      cell.colSpan = 6;
+      cell.colSpan = 7;
       cell.className = 'empty';
       rows.append(row);
       return;
@@ -64,7 +93,7 @@
     if (!data?.length) {
       const row = document.createElement('tr');
       const cell = addCell(row, 'No application users found.');
-      cell.colSpan = 6;
+      cell.colSpan = 7;
       cell.className = 'empty';
       rows.append(row);
       return;
@@ -82,6 +111,7 @@
       badge.textContent = roleName[user.role] || user.role || '—';
       roleCell.append(badge);
       row.append(roleCell);
+      addCell(row, accessSummary(user));
       addCell(row, user.created_at ? new Date(user.created_at).toLocaleDateString() : '—');
 
       const actions = document.createElement('td');
@@ -135,7 +165,8 @@
           designation: String(values.get('designation')).trim(),
           email: String(values.get('email')).trim(),
           role: String(values.get('role')),
-          password: String(values.get('password'))
+          password: String(values.get('password')),
+          pageAccess: collectAccess(document.getElementById('createPageAccessOptions'),String(values.get('role')))
         }
       });
       if (error) {
@@ -167,7 +198,8 @@
         userId: String(values.get('userId')),
         fullName: String(values.get('fullName')).trim(),
         designation: String(values.get('designation')).trim(),
-        role: String(values.get('role'))
+        role: String(values.get('role')),
+        pageAccess: collectAccess(document.getElementById('editPageAccessOptions'),String(values.get('role')))
       });
       dialog.close();
       setMessage(feedback, `Updated ${updated.email}: ${roleName[updated.role] || updated.role}.`);
@@ -181,7 +213,10 @@
   });
 
   document.getElementById('cancelEdit').addEventListener('click', () => dialog.close());
+  document.getElementById('role').addEventListener('change',event=>renderAccessOptions(document.getElementById('createPageAccessOptions'),event.target.value,defaultAccess(event.target.value)));
+  document.getElementById('editRole').addEventListener('change',event=>renderAccessOptions(document.getElementById('editPageAccessOptions'),event.target.value,defaultAccess(event.target.value)));
   dialog.addEventListener('click', event => { if (event.target === dialog) dialog.close(); });
   document.getElementById('refreshUsers').addEventListener('click', loadUsers);
+  renderAccessOptions(document.getElementById('createPageAccessOptions'),document.getElementById('role').value,defaultAccess(document.getElementById('role').value));
   loadUsers();
 })();

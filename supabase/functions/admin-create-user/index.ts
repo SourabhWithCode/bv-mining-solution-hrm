@@ -1,6 +1,14 @@
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
 import { corsHeaders } from 'https://esm.sh/@supabase/supabase-js@2/cors';
 const json=(body:Record<string,unknown>,status=200)=>new Response(JSON.stringify(body),{status,headers:{...corsHeaders,'Content-Type':'application/json'}});
+const assignablePages=['dashboard','employee_records','employees_data','shift_board','mining_report','attendance','monthly_attendance','leave','stock_management','ppe_issue_records','stock_returns','reports'];
+const rolePages:Record<string,string[]>={admin:[...assignablePages,'audit_log','user_management'],hr:assignablePages,accountant:assignablePages,store:assignablePages,mechanical:assignablePages,mine_mate:assignablePages,foreman:assignablePages,project_manager:assignablePages,assistant_project_manager:assignablePages};
+function pageAccess(input:unknown,role:string):Record<string,boolean>|null{
+  const allowed=rolePages[role]||[];if(input===undefined)return Object.fromEntries(allowed.map(key=>[key,true]));
+  if(!input||typeof input!=='object'||Array.isArray(input))return null;
+  const requested=input as Record<string,unknown>;if(Object.keys(requested).some(key=>requested[key]===true&&!allowed.includes(key)))return null;
+  return Object.fromEntries(allowed.filter(key=>key==='dashboard'||requested[key]===true).map(key=>[key,true]));
+}
 
 function apiKey(legacyName:string,mapName:string):string|null{
   const legacy=Deno.env.get(legacyName);
@@ -42,13 +50,15 @@ Deno.serve(async req=>{
   if(!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email))return json({error:'Enter a valid email address.'},400);
   if(password.length<6||password.length>12)return json({error:'Temporary password must be 6 to 12 characters.'},400);
   if(!['admin','hr','accountant','store','mechanical','mine_mate','foreman','project_manager','assistant_project_manager'].includes(role))return json({error:'Choose a valid access role.'},400);
+  const selectedPageAccess=pageAccess(input.pageAccess,role);
+  if(!selectedPageAccess)return json({error:'Page access contains pages that are not available for this role.'},400);
 
   const admin=createClient(url,secret,{global:{headers:{'x-audit-actor-id':userData.user.id}},auth:{persistSession:false,autoRefreshToken:false}});
   const {data:created,error:createError}=await admin.auth.admin.createUser({email,password,email_confirm:true,user_metadata:{full_name:fullName,designation}});
   if(createError)return json({error:createError.message},400);
   if(!created.user)return json({error:'Supabase did not return the new account.'},500);
 
-  const {error:profileWriteError}=await admin.from('user_profiles').upsert({id:created.user.id,email,full_name:fullName,designation,role},{onConflict:'id'});
+  const {error:profileWriteError}=await admin.from('user_profiles').upsert({id:created.user.id,email,full_name:fullName,designation,role,page_access:selectedPageAccess},{onConflict:'id'});
   if(profileWriteError){await admin.auth.admin.deleteUser(created.user.id);return json({error:`Could not save the application role: ${profileWriteError.message}`},500)}
-  return json({id:created.user.id,email,fullName,role},201);
+  return json({id:created.user.id,email,fullName,role,pageAccess:selectedPageAccess},201);
 });

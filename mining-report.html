@@ -1,0 +1,42 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>BV Mining Solution | Mining Report</title>
+  <link rel="stylesheet" href="assets/css/leave.css"><link rel="stylesheet" href="assets/css/responsive.css"><link rel="stylesheet" href="assets/css/mining-report.css">
+</head>
+<body>
+  <main class="shell">
+    <header class="top"><div class="brand"><div class="mark">BV</div><div><strong>BV Mining Solution</strong><small>Mining operations</small></div></div><nav class="links"><a class="link" href="index.html">Dashboard</a></nav></header>
+    <section class="hero"><div class="eyebrow">Operations</div><h1>Mining Report</h1><p>Record shift progress, blasting, manpower, and equipment status.</p></section>
+    <div class="layout mining-layout">
+      <section class="panel"><div class="head"><h2 id="formTitle">New Shift Report</h2><p>Enter one report for a shift and location.</p></div>
+        <form class="body" id="reportForm">
+          <input id="reportId" type="hidden">
+          <label class="label" for="reportDate">Date *</label><input class="field" id="reportDate" type="date" required>
+          <label class="label" for="reportShift">Shift *</label><select class="field" id="reportShift" required><option value="">Select shift</option><option value="first">1st shift</option><option value="second">2nd shift</option><option value="night">Night shift</option></select>
+          <label class="label" for="reportLocation">Location / Level *</label><input class="field" id="reportLocation" maxlength="120" required placeholder="e.g. 3rd Level, Panel 4">
+          <label class="label" for="reporterName">Mine Mate / Foreman</label><input class="field" id="reporterName" readonly>
+          <div class="row"><div><label class="label" for="reportBlasts">Number of Blasts *</label><input class="field" id="reportBlasts" type="number" min="0" step="1" value="0" required></div><div><label class="label" for="reportManpower">Number of Manpower</label><input class="field" id="reportManpower" type="number" min="0" step="1" value="0" readonly></div></div>
+          <label class="label" for="reportManpowerNames">Names of All Manpower</label><textarea class="field" id="reportManpowerNames" rows="4" readonly placeholder="Select a date and shift to load assigned members"></textarea>
+          <label class="label" for="reportOperatorName">Operator Name</label><input class="field" id="reportOperatorName" readonly placeholder="Auto-filled from Shift Board">
+          <label class="label" for="reportMechanicNames">Names of Mechanics</label><textarea class="field" id="reportMechanicNames" rows="3" readonly placeholder="Auto-filled from Shift Board"></textarea>
+          <p class="roster-note">These fields are filled from Shift Board assignments for the selected date and shift. Operator and mechanic names are matched using the employee designation.</p>
+          <label class="label" for="reportWork">Work Done</label><textarea class="field" id="reportWork" rows="3" maxlength="2000"></textarea>
+          <label class="label" for="reportPending">Pending Work</label><textarea class="field" id="reportPending" rows="3" maxlength="2000"></textarea>
+          <label class="label" for="reportMachine">Machine Status</label><select class="field" id="reportMachine"><option value="">Select status</option><option>Working</option><option>Breakdown</option><option>Under Maintenance</option><option>Idle</option></select>
+          <label class="label" for="reportMaintenance">Maintenance</label><textarea class="field" id="reportMaintenance" rows="2" maxlength="2000"></textarea>
+          <label class="label" for="reportIdle">Idle Time (hours)</label><input class="field" id="reportIdle" type="number" min="0" max="24" step="0.25" value="0">
+          <label class="label" for="reportRemarks">Remarks</label><textarea class="field" id="reportRemarks" rows="2" maxlength="2000"></textarea>
+          <div class="form-actions"><button class="primary" id="saveReport" type="submit">Save report</button><button class="secondary" id="cancelEdit" type="button" hidden>Cancel edit</button></div>
+        </form>
+      </section>
+      <section class="panel report-history"><div class="head"><h2>Shift Report History</h2><p>Filter and review saved reports.</p></div>
+        <div class="filters"><label>From <input id="filterFrom" type="date"></label><label>To <input id="filterTo" type="date"></label><label>Shift <select id="filterShift"><option value="">All shifts</option><option value="first">1st shift</option><option value="second">2nd shift</option><option value="night">Night shift</option></select></label><button class="filter-button" id="applyFilters" type="button">Search</button><button class="filter-button light" id="clearFilters" type="button">Clear</button></div>
+        <div class="tablewrap"><table class="table report-table"><thead><tr><th>Date</th><th>Shift</th><th>Location / Level</th><th>Blasts</th><th>Mine Mate / Foreman</th><th>Operator Name</th><th>Manpower Count</th><th>Names of All Manpower</th><th>Names of Mechanics</th><th>Work Done</th><th>Pending Work</th><th>Machine Status</th><th>Maintenance</th><th>Idle Time</th><th>Remarks</th><th data-admin-only>Actions</th></tr></thead><tbody id="reportRows"><tr><td class="empty" colspan="16">Loading reports…</td></tr></tbody></table></div>
+      </section>
+    </div>
+  </main>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script><script src="assets/js/supabase-config.js"></script><script src="assets/js/supabase-client.js"></script><script src="assets/js/app-bootstrap.js"></script><script>window.HRDB.boot().then(function(ready){if(!ready)return;var app=document.createElement('script');app.src='assets/js/mining-report.js';document.body.appendChild(app)}).catch(function(error){window.HRDB.status('Supabase connection failed: '+error.message,true)})</script>
+</body>
+</html>

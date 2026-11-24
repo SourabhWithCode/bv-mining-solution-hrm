@@ -100,6 +100,8 @@ create table if not exists public.employees (
   authorisation_expiry_date date,
   new_appointments text,
   address_category text,
+  employment_status text not null default 'Active'
+    check (employment_status in ('Active','Suspended','Resigned','Transferred')),
   is_active boolean not null default true,
   created_at timestamptz not null default now(),
   updated_at timestamptz not null default now()
@@ -211,6 +213,7 @@ create table if not exists public.ppe_items (
   id uuid primary key default gen_random_uuid(),
   item_name text not null unique,
   opening_stock integer not null default 0 check (opening_stock >= 0),
+  minimum_stock integer not null default 0 check (minimum_stock >= 0),
   is_active boolean not null default true,
   created_at timestamptz not null default now()
 );

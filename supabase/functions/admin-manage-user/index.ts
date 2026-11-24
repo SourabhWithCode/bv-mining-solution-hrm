@@ -4,6 +4,14 @@ const json = (body: Record<string, unknown>, status = 200) => new Response(JSON.
   status,
   headers: { ...corsHeaders, 'Content-Type': 'application/json' },
 });
+const assignablePages=['dashboard','employee_records','employees_data','shift_board','mining_report','attendance','monthly_attendance','leave','stock_management','ppe_issue_records','stock_returns','reports'];
+const rolePages:Record<string,string[]>={admin:[...assignablePages,'audit_log','user_management'],hr:assignablePages,accountant:assignablePages,store:assignablePages,mechanical:assignablePages,mine_mate:assignablePages,foreman:assignablePages,project_manager:assignablePages,assistant_project_manager:assignablePages};
+function pageAccess(input:unknown,role:string):Record<string,boolean>|null{
+  const allowed=rolePages[role]||[];if(input===undefined)return Object.fromEntries(allowed.map(key=>[key,true]));
+  if(!input||typeof input!=='object'||Array.isArray(input))return null;
+  const requested=input as Record<string,unknown>;if(Object.keys(requested).some(key=>requested[key]===true&&!allowed.includes(key)))return null;
+  return Object.fromEntries(allowed.filter(key=>key==='dashboard'||requested[key]===true).map(key=>[key,true]));
+}
 
 function apiKey(legacyName: string, mapName: string): string | null {
   const legacy = Deno.env.get(legacyName);
@@ -54,7 +62,7 @@ Deno.serve(async req => {
 
   const admin = createClient(url, secret, { global: { headers: { 'x-audit-actor-id': userData.user.id } }, auth: { persistSession: false, autoRefreshToken: false } });
   const { data: target, error: targetError } = await admin.from('user_profiles')
-    .select('id,email,full_name,designation,role').eq('id', userId).maybeSingle();
+    .select('id,email,full_name,designation,role,page_access').eq('id', userId).maybeSingle();
   if (targetError) return json({ error: `Could not load that account: ${targetError.message}` }, 500);
   if (!target) return json({ error: 'Application user not found.' }, 404);
 
@@ -76,6 +84,8 @@ Deno.serve(async req => {
   if (!fullName || fullName.length > 120) return json({ error: 'Enter a name up to 120 characters.' }, 400);
   if (!designation || designation.length > 80) return json({ error: 'Enter a designation up to 80 characters.' }, 400);
   if (!['admin', 'hr', 'accountant', 'store', 'mechanical', 'mine_mate', 'foreman', 'project_manager', 'assistant_project_manager'].includes(role)) return json({ error: 'Choose a valid access role.' }, 400);
+  const selectedPageAccess=pageAccess(input.pageAccess,role);
+  if(!selectedPageAccess)return json({error:'Page access contains pages that are not available for this role.'},400);
   if (userId === userData.user.id && role !== 'admin') return json({ error: 'You cannot remove your own Admin role.' }, 400);
 
   if (target.role === 'admin' && role !== 'admin') {
@@ -96,10 +106,11 @@ Deno.serve(async req => {
     full_name: fullName,
     designation,
     role,
+    page_access:selectedPageAccess,
   }).eq('id', userId);
   if (profileUpdateError) {
     await admin.auth.admin.updateUserById(userId, { user_metadata: previousMetadata });
     return json({ error: `Could not save the application profile: ${profileUpdateError.message}` }, 500);
   }
-  return json({ id: userId, email: target.email, fullName, designation, role, updated: true });
+  return json({ id: userId, email: target.email, fullName, designation, role, pageAccess:selectedPageAccess, updated: true });
 });

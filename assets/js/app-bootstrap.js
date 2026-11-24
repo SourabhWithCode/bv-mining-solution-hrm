@@ -3,7 +3,7 @@
   const nativeSet = Storage.prototype.setItem;
   const nativeRemove = Storage.prototype.removeItem;
   const key = { shift:'shift-board-v1', attendance:'hr-attendance-v1', leave:'hr-leave-v1', issue:'hr-item-issues-v1', stock:'hr-ppe-stock-v1' };
-  const fields = ['employeeCode','employeeNameAadhaar','firstName','surname','gender','fatherName','spouseName','dob','nationality','educationLevel','dojDcs','designation','department','categoryAddressHs','employmentType','mobile','uanNumber','pan','esic','ip','lwf','aadhaar','bankAccount','bank','branchIfsc','presentAddress','permanentAddress','identificationMark','tokenNumber','firstAppointmentOwner','ageFitnessCertificate','medical','placeOfEmployment','vocationalTrainingNumber','vocationalTrainingDate','vocationalTrainingExpiryDate','nominee','nomineeAddress','emergencyContactName','emergencyContactRelation','emergencyContactAddress','emergencyContactNumber','remarks','location','bloodGroup','medicalDate','medicalExpiryDate','vtBasic','vtSpecial','authorisation','authorisationDate','authorisationExpiryDate','newAppointments','addressCategory'];
+  const fields = ['employeeCode','employeeNameAadhaar','firstName','surname','gender','fatherName','spouseName','dob','nationality','educationLevel','dojDcs','designation','department','categoryAddressHs','employmentType','employmentStatus','mobile','uanNumber','pan','esic','ip','lwf','aadhaar','bankAccount','bank','branchIfsc','presentAddress','permanentAddress','identificationMark','tokenNumber','firstAppointmentOwner','ageFitnessCertificate','medical','placeOfEmployment','vocationalTrainingNumber','vocationalTrainingDate','vocationalTrainingExpiryDate','nominee','nomineeAddress','emergencyContactName','emergencyContactRelation','emergencyContactAddress','emergencyContactNumber','remarks','location','bloodGroup','medicalDate','medicalExpiryDate','vtBasic','vtSpecial','authorisation','authorisationDate','authorisationExpiryDate','newAppointments','addressCategory'];
   const dateFields = new Set(['dob','dojDcs','firstAppointmentOwner','vocationalTrainingDate','vocationalTrainingExpiryDate','medicalDate','medicalExpiryDate','authorisationDate','authorisationExpiryDate']);
   const snake = value => value.replace(/[A-Z]/g, letter => '_' + letter.toLowerCase());
   const parse = (value, fallback) => { try { return JSON.parse(value) ?? fallback; } catch { return fallback; } };
@@ -14,22 +14,22 @@
     el.style.background=error?'#982f27':'#173d30';el.textContent=message;el.hidden=false;clearTimeout(el._timer);if(!error)el._timer=setTimeout(()=>{el.hidden=true},2200);
   };
   const check = result => { if(result.error) throw result.error; return result.data; };
-  let role='', user=null, employeeRows=[], queue=Promise.resolve();
+  let role='', user=null, employeeRows=[], queue=Promise.resolve(), pageAccess={};
   const camelEmployee = row => {
-    const m={id:row.id,srNo:row.serial_no||'',isActive:row.is_active!==false};
+    const m={id:row.id,srNo:row.serial_no||'',isActive:row.is_active!==false,employmentStatus:row.employment_status||'Active'};
     for(const field of fields)m[field]=row[field==='employeeNameAadhaar'?'employee_name':snake(field)]??'';
     m.empCode=m.employeeCode||'';m.name=m.employeeNameAadhaar||[m.firstName,m.surname].filter(Boolean).join(' ')||m.empCode||`Employee ${m.srNo}`;
     return m;
   };
   const employeeRow = m => {
-    const row={id:m.id,is_active:m.isActive!==false,updated_at:new Date().toISOString()};
+    const row={id:m.id,is_active:m.isActive!==false,employment_status:m.employmentStatus||'Active',updated_at:new Date().toISOString()};
     const serial=Number(m.srNo);if(serial>0)row.serial_no=serial;
     for(const field of fields){const col=field==='employeeNameAadhaar'?'employee_name':snake(field);let value=m[field]??'';if(dateFields.has(field)&&!value)value=null;if(field==='employeeCode'&&!value)value=null;row[col]=value}
     return row;
   };
   const cleanRows = rows => rows.filter(Boolean);
   async function loadCache(){
-    const isHr=['admin','hr'].includes(role);
+    const isHr=['admin','hr'].includes(role)||pageAccess.employee_records===true||pageAccess.employees_data===true;
     const empResult=check(await client.from(isHr?'employees':'employee_directory').select('*').order(isHr?'serial_no':'employee_code'));
     employeeRows=empResult||[];
     const members=employeeRows.map(camelEmployee);
@@ -43,7 +43,7 @@
       client.from('ppe_stock_movements').select('*'),
       client.from('overtime_entries').select('*')
     ].map(p=>p.then(check)));
-    const schedule={},overtime={};(shiftRows||[]).forEach(r=>{schedule[r.work_date]??={};schedule[r.work_date][r.employee_id]=r.shift});(otRows||[]).forEach(r=>{overtime[r.work_date]??={};overtime[r.work_date][r.employee_id]={hours:Number(r.hours),reason:r.reason||''}});
+    const schedule={},overtime={};(shiftRows||[]).forEach(r=>{schedule[r.work_date]??={};schedule[r.work_date][r.employee_id]=r.shift});(otRows||[]).forEach(r=>{overtime[r.work_date]??={};overtime[r.work_date][r.employee_id]={hours:Number(r.hours),reason:r.reason||'',approvalStatus:r.approval_status||'Pending',approvedBy:r.approved_by||'',approvedAt:r.approved_at||'',recordedBy:r.recorded_by||''}});
     setCache(key.shift,{members,schedule,overtime,nextSrNo});
     const days={},manualClear={};(attendanceRows||[]).forEach(r=>{if(r.status===null){manualClear[r.attendance_date]??={};manualClear[r.attendance_date][r.employee_id]=true}else{days[r.attendance_date]??={};days[r.attendance_date][r.employee_id]=r.status}});setCache(key.attendance,{days,manualClear});
     const byId=new Map(members.map(m=>[m.id,m]));
@@ -51,38 +51,39 @@
     const items=itemRows||[],itemsById=new Map(items.map(i=>[i.id,i.item_name])),categories=Object.fromEntries(items.map(i=>[i.item_name,i.category||'Other']));
     const records=(issueRows||[]).map(r=>({id:r.id,employeeCode:byId.get(r.employee_id)?.employeeCode||'',person:byId.get(r.employee_id)?.name||'',item:itemsById.get(r.item_id)||'',date:r.issue_date,quantity:r.quantity}));
     setCache(key.issue,{items:items.map(i=>i.item_name),itemCategories:categories,records});
-    const opening=Object.fromEntries(items.map(i=>[i.item_name,Number(i.opening_stock)||0]));
+    const opening=Object.fromEntries(items.map(i=>[i.item_name,Number(i.opening_stock)||0]));const minimum=Object.fromEntries(items.map(i=>[i.item_name,Number(i.minimum_stock)||0]));
     const movements=(movementRows||[]).map(r=>({id:r.id,type:r.movement_type==='return'?'return':'in',item:itemsById.get(r.item_id)||'',quantity:r.quantity,date:r.movement_date,employee:byId.get(r.employee_id)?.name||'',note:r.note||''}));
-    setCache(key.stock,{opening,movements});
+    setCache(key.stock,{opening,minimum,movements});
   }
   const membersNow=()=>parse(localStorage.getItem(key.shift),{members:[]}).members||[];
   const memberByCode=(code)=>membersNow().find(m=>String(m.employeeCode||m.empCode||'').trim().toLowerCase()===String(code||'').trim().toLowerCase());
   const memberByName=(name)=>membersNow().find(m=>String(m.name||m.employeeNameAadhaar||'').trim().toLowerCase()===String(name||'').trim().toLowerCase());
-  async function syncEmployees(state,previous){if(!['admin','hr'].includes(role))return;const oldIds=new Set((previous?.members||[]).map(m=>m.id));const rows=cleanRows((state.members||[]).filter(m=>role==='admin'||!oldIds.has(m.id)).map(employeeRow));if(rows.length)check(await (role==='admin'?client.from('employees').upsert(rows,{onConflict:'id'}):client.from('employees').insert(rows)))}
+  async function syncEmployees(state,previous){if(!pageAccess.employee_records)return;const oldIds=new Set((previous?.members||[]).map(m=>m.id));const rows=cleanRows((state.members||[]).filter(m=>role==='admin'||!oldIds.has(m.id)).map(employeeRow));if(rows.length)check(await (role==='admin'?client.from('employees').upsert(rows,{onConflict:'id'}):client.from('employees').insert(rows)))}
   async function syncShift(state,previous){
     await syncEmployees(state,previous);
     const assignments=[];Object.entries(state.schedule||{}).forEach(([date,entries])=>Object.entries(entries||{}).forEach(([employeeId,shift])=>{if(role!=='admin'&&Object.hasOwn(previous?.schedule?.[date]||{},employeeId))return;assignments.push({employee_id:employeeId,work_date:date,shift,updated_by:user.id,updated_at:new Date().toISOString()})}));
     if(assignments.length)check(await (role==='admin'?client.from('shift_assignments').upsert(assignments,{onConflict:'employee_id,work_date'}):client.from('shift_assignments').insert(assignments)));
-    const ot=[];Object.entries(state.overtime||{}).forEach(([date,entries])=>Object.entries(entries||{}).forEach(([employeeId,value])=>{if(Number(value?.hours)>0&&(role==='admin'||!Object.hasOwn(previous?.overtime?.[date]||{},employeeId)))ot.push({employee_id:employeeId,work_date:date,hours:Number(value.hours),reason:value.reason||'',recorded_by:user.id,updated_at:new Date().toISOString()})}));
+    const ot=[];Object.entries(state.overtime||{}).forEach(([date,entries])=>Object.entries(entries||{}).forEach(([employeeId,value])=>{if(Number(value?.hours)>0&&(role==='admin'||!Object.hasOwn(previous?.overtime?.[date]||{},employeeId)))ot.push({employee_id:employeeId,work_date:date,hours:Number(value.hours),reason:value.reason||'',approval_status:value.approvalStatus||'Pending',approved_by:role==='admin'?(value.approvedBy||null):null,approved_at:role==='admin'?(value.approvedAt||null):null,recorded_by:value.recordedBy||user.id,updated_at:new Date().toISOString()})}));
     if(ot.length)check(await (role==='admin'?client.from('overtime_entries').upsert(ot,{onConflict:'employee_id,work_date'}):client.from('overtime_entries').insert(ot)));
     if(role==='admin')for(const [date,entries] of Object.entries(previous?.overtime||{}))for(const employeeId of Object.keys(entries||{}))if(!Number(state.overtime?.[date]?.[employeeId]?.hours))check(await client.from('overtime_entries').delete().eq('employee_id',employeeId).eq('work_date',date));
   }
   async function syncAttendance(state,previous){const rows=[],rowKeys=new Set();Object.entries(state.days||{}).forEach(([date,entries])=>Object.entries(entries||{}).forEach(([employeeId,statusValue])=>{if(role!=='admin'&&(Object.hasOwn(previous?.days?.[date]||{},employeeId)||Object.hasOwn(previous?.manualClear?.[date]||{},employeeId)))return;rows.push({employee_id:employeeId,attendance_date:date,status:statusValue,updated_by:user.id,updated_at:new Date().toISOString()});rowKeys.add(`${date}:${employeeId}`)}));Object.entries(state.manualClear||{}).forEach(([date,entries])=>Object.keys(entries||{}).forEach(employeeId=>{const k=`${date}:${employeeId}`;if(rowKeys.has(k)||role!=='admin'&&(Object.hasOwn(previous?.days?.[date]||{},employeeId)||Object.hasOwn(previous?.manualClear?.[date]||{},employeeId)))return;rows.push({employee_id:employeeId,attendance_date:date,status:null,updated_by:user.id,updated_at:new Date().toISOString()});rowKeys.add(k)}));if(rows.length)check(await (role==='admin'?client.from('attendance').upsert(rows,{onConflict:'employee_id,attendance_date'}):client.from('attendance').insert(rows)));if(role==='admin')for(const source of [previous?.days,previous?.manualClear])for(const [date,entries] of Object.entries(source||{}))for(const employeeId of Object.keys(entries||{}))if(!state.days?.[date]?.[employeeId]&&!state.manualClear?.[date]?.[employeeId])check(await client.from('attendance').delete().eq('employee_id',employeeId).eq('attendance_date',date))}
   async function syncLeave(records,previous){const oldIds=new Set((previous||[]).map(r=>r.id));for(const r of records||[]){if(role!=='admin'&&oldIds.has(r.id))continue;const m=(r.employeeCode&&memberByCode(r.employeeCode))||memberByName(r.employee);if(!m)continue;const row={id:r.id,employee_id:m.id,leave_type:r.type,start_date:r.start,end_date:r.end,reason:r.reason||'',status:r.status||'Pending',submitted_by:r.submittedBy||user.id,updated_at:new Date().toISOString()};check(await (role==='admin'?client.from('leave_requests').upsert(row,{onConflict:'id'}):client.from('leave_requests').insert(row)))}}
-  async function syncItems(issueData,stockData){const names=issueData.items||[];if(!names.length)return[];if(role==='admin'){const items=names.map(item=>({item_name:item,category:issueData.itemCategories?.[item]||'Other',opening_stock:Math.max(0,Number(stockData.opening?.[item])||0),is_active:true}));return check(await client.from('ppe_items').upsert(items,{onConflict:'item_name'}).select('id,item_name'))}const existing=check(await client.from('ppe_items').select('id,item_name').in('item_name',names));const found=new Set(existing.map(x=>x.item_name));const fresh=names.filter(item=>!found.has(item)).map(item=>({item_name:item,category:issueData.itemCategories?.[item]||'Other',opening_stock:0,is_active:true}));if(fresh.length)check(await client.from('ppe_items').insert(fresh));return check(await client.from('ppe_items').select('id,item_name').in('item_name',names))}
+  async function syncItems(issueData,stockData){const names=issueData.items||[];if(!names.length)return[];if(role==='admin'){const items=names.map(item=>({item_name:item,category:issueData.itemCategories?.[item]||'Other',opening_stock:Math.max(0,Number(stockData.opening?.[item])||0),minimum_stock:Math.max(0,Number(stockData.minimum?.[item])||0),is_active:true}));return check(await client.from('ppe_items').upsert(items,{onConflict:'item_name'}).select('id,item_name'))}const existing=check(await client.from('ppe_items').select('id,item_name').in('item_name',names));const found=new Set(existing.map(x=>x.item_name));const fresh=names.filter(item=>!found.has(item)).map(item=>({item_name:item,category:issueData.itemCategories?.[item]||'Other',opening_stock:0,minimum_stock:0,is_active:true}));if(fresh.length)check(await client.from('ppe_items').insert(fresh));return check(await client.from('ppe_items').select('id,item_name').in('item_name',names))}
   async function syncIssues(issueData,previous){const stock=parse(localStorage.getItem(key.stock),{opening:{},movements:[]}),items=await syncItems(issueData,stock),itemsByName=new Map(items.map(x=>[x.item_name,x.id])),oldIds=new Set((previous?.records||[]).map(r=>r.id)),rows=[];for(const r of issueData.records||[]){if(role!=='admin'&&oldIds.has(r.id))continue;const m=memberByCode(r.employeeCode)||memberByName(r.person),itemId=itemsByName.get(r.item);if(!m||!itemId)continue;rows.push({id:r.id,employee_id:m.id,item_id:itemId,issue_date:r.date,quantity:Number(r.quantity)||1,issued_by:user.id})}if(rows.length)check(await (role==='admin'?client.from('ppe_issues').upsert(rows,{onConflict:'employee_id,item_id,issue_date'}):client.from('ppe_issues').insert(rows)))}
   async function syncStock(stockData,previous){const issue=parse(localStorage.getItem(key.issue),{items:[],itemCategories:{},records:[]}),items=await syncItems(issue,stockData),itemsByName=new Map(items.map(x=>[x.item_name,x.id])),oldIds=new Set((previous?.movements||[]).map(r=>r.id)),rows=[];for(const r of stockData.movements||[]){if(role!=='admin'&&oldIds.has(r.id))continue;const itemId=itemsByName.get(r.item);if(!itemId)continue;const employee=memberByName(r.employee);rows.push({id:r.id,item_id:itemId,movement_type:r.type==='return'?'return':'received',quantity:Number(r.quantity)||1,movement_date:r.date,employee_id:employee?.id||null,note:r.note||'',recorded_by:user.id})}if(rows.length)check(await (role==='admin'?client.from('ppe_stock_movements').upsert(rows,{onConflict:'id'}):client.from('ppe_stock_movements').insert(rows)))}
   async function syncKey(name,value,previousValue){const parsed=parse(value,null),previous=parse(previousValue,null);if(!parsed)return;if(name===key.shift)return syncShift(parsed,previous);if(name===key.attendance)return syncAttendance(parsed,previous);if(name===key.leave)return syncLeave(parsed,previous);if(name===key.issue)return syncIssues(parsed,previous);if(name===key.stock)return syncStock(parsed,previous)}
   function wireStorage(){Storage.prototype.setItem=function(name,value){const tracked=this===localStorage&&Object.values(key).includes(name);const old=this.getItem(name);nativeSet.call(this,name,value);if(tracked){queue=queue.then(()=>syncKey(name,value,old)).then(()=>status('Saved to Supabase')).catch(error=>{console.error(error);status('Supabase save failed: '+(error.message||'Check connection and access'),true)})}}}
   async function boot(){
     const {data:{session}}=await client.auth.getSession();if(!session){location.replace('login.html');return false}user=session.user;
-    const profile=check(await client.from('user_profiles').select('role,email,full_name,designation').eq('id',user.id).single());role=profile.role;
+    const profile=check(await client.from('user_profiles').select('role,email,full_name,designation,page_access').eq('id',user.id).single());role=profile.role;
     const allRoles=['admin','hr','accountant','store','mechanical','mine_mate','foreman','project_manager','assistant_project_manager'];
-    const shiftRoles=['admin','mine_mate','foreman'];
-    const hrRoles=['admin','hr'];
-    const storeRoles=['admin','store'];
-    const page=location.pathname.split('/').pop()||'index.html';const access={ 'admin-users.html':['admin'],'audit-log.html':['admin'],'employee-records.html':hrRoles,'employees-data.html':hrRoles,'attendance.html':hrRoles,'monthly-attendance.html':hrRoles,'leave.html':allRoles,'samaan-issue.html':storeRoles,'ppe-stock.html':storeRoles,'ppe-issue-records.html':storeRoles,'reports.html':hrRoles,'shift-dashboard.html':shiftRoles,'index.html':allRoles};
-    if(access[page]&&!access[page].includes(role)){document.body.innerHTML='<main style="max-width:600px;margin:15vh auto;padding:24px;font:16px system-ui"><h1>Access restricted</h1><p>Your account role does not have access to this page.</p><button id="signout">Sign out</button></main>';document.getElementById('signout').onclick=()=>client.auth.signOut().then(()=>location.replace('login.html'));return false}
+    const defaults={admin:['dashboard','employee_records','employees_data','shift_board','mining_report','attendance','monthly_attendance','leave','stock_management','ppe_issue_records','stock_returns','reports','audit_log','user_management'],hr:['dashboard','employee_records','employees_data','attendance','monthly_attendance','leave','reports'],accountant:['dashboard','leave'],store:['dashboard','leave','stock_management','ppe_issue_records','stock_returns'],mechanical:['dashboard','leave'],mine_mate:['dashboard','leave','shift_board','mining_report'],foreman:['dashboard','leave','shift_board','mining_report'],project_manager:['dashboard','leave'],assistant_project_manager:['dashboard','leave']};
+    pageAccess=profile.page_access&&Object.keys(profile.page_access).length?profile.page_access:Object.fromEntries((defaults[role]||['dashboard','leave']).map(key=>[key,true]));
+    const page=location.pathname.split('/').pop()||'index.html';
+    const pageKey={'employee-records.html':'employee_records','employees-data.html':'employees_data','attendance.html':'attendance','monthly-attendance.html':'monthly_attendance','leave.html':'leave','samaan-issue.html':'stock_management','ppe-stock.html':'stock_returns','ppe-issue-records.html':'ppe_issue_records','reports.html':'reports','mining-report.html':'mining_report','shift-dashboard.html':'shift_board','index.html':'dashboard'};
+    const adminOnlyPage=['admin-users.html','audit-log.html'].includes(page);const pageDenied=adminOnlyPage?role!=='admin':role!=='admin'&&pageKey[page]&&pageAccess[pageKey[page]]!==true;
+    if(pageDenied){document.body.innerHTML='<main style="max-width:600px;margin:15vh auto;padding:24px;font:16px system-ui"><h1>Access restricted</h1><p>Your account does not have access to this page. Contact an administrator if you need access.</p><button id="signout">Sign out</button></main>';document.getElementById('signout').onclick=()=>client.auth.signOut().then(()=>location.replace('login.html'));return false}
     await loadCache();wireStorage();
     renderSidebar(profile);
     if(role!=='admin')applyRoleRestrictions();
@@ -113,6 +114,7 @@
       ['Employee Records','employee-records.html',['admin','hr']],
       ['Employees Data','employees-data.html',['admin','hr']],
       ['Shift Board','shift-dashboard.html',['admin','mine_mate','foreman']],
+      ['Mining Report','mining-report.html',['admin','mine_mate','foreman']],
       ['Attendance','attendance.html',['admin','hr']],
       ['Monthly Attendance','monthly-attendance.html',['admin','hr']],
       ['Leave','leave.html',['admin','hr','accountant','store','mechanical','mine_mate','foreman','project_manager','assistant_project_manager']],
@@ -128,7 +130,8 @@
     sidebar.innerHTML='<div class="hrdb-sidebar-brand"><div class="hrdb-sidebar-mark">BV</div><div><strong>BV Mining Solution</strong><small>Workforce management</small></div></div>';
     const nav=document.createElement('nav');nav.className='hrdb-side-nav';
     const current=location.pathname.split('/').pop()||'index.html';
-    pages.filter(([, ,roles])=>roles.includes(role)).forEach(([label,href])=>{const link=document.createElement('a');link.href=href;link.textContent=label;if(current===href)link.setAttribute('aria-current','page');nav.append(link)});
+    const pageKey={'index.html':'dashboard','employee-records.html':'employee_records','employees-data.html':'employees_data','shift-dashboard.html':'shift_board','mining-report.html':'mining_report','attendance.html':'attendance','monthly-attendance.html':'monthly_attendance','leave.html':'leave','samaan-issue.html':'stock_management','ppe-issue-records.html':'ppe_issue_records','ppe-stock.html':'stock_returns','reports.html':'reports'};
+    pages.filter(([,href])=>role==='admin'||pageAccess[pageKey[href]]===true).forEach(([label,href])=>{const link=document.createElement('a');link.href=href;link.textContent=label;if(current===href)link.setAttribute('aria-current','page');nav.append(link)});
     if(role==='admin'){const approvals=document.createElement('a');approvals.href='audit-log.html';approvals.textContent='Audit Log & Approvals';if(current==='audit-log.html')approvals.setAttribute('aria-current','page');nav.append(approvals);const users=document.createElement('a');users.href='admin-users.html';users.textContent='User Management';if(current==='admin-users.html')users.setAttribute('aria-current','page');nav.append(users)}
     sidebar.append(nav);
     const account=document.createElement('div');account.className='hrdb-side-account';
@@ -144,5 +147,5 @@
     toggle.onclick=()=>toggle.getAttribute('aria-expanded')==='true'?close():open();backdrop.onclick=close;nav.addEventListener('click',e=>{if(e.target.closest('a'))close()});
     document.addEventListener('keydown',e=>{if(e.key==='Escape'&&toggle.getAttribute('aria-expanded')==='true')close()});
   }
-  window.HRDB={client,boot,status,get role(){return role},get user(){return user},get canEdit(){return role==='admin'},flush:()=>queue};
+  window.HRDB={client,boot,status,get role(){return role},get user(){return user},get canEdit(){return role==='admin'},hasPageAccess:page=>role==='admin'||pageAccess[page]===true,flush:()=>queue};
 })();

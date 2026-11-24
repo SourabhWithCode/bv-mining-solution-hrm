@@ -138,7 +138,15 @@ drop policy if exists overtime_delete on public.overtime_entries;
 drop policy if exists "overtime update by admin" on public.overtime_entries;
 drop policy if exists "overtime delete by admin" on public.overtime_entries;
 create policy overtime_insert on public.overtime_entries for insert to authenticated
-  with check (public.has_any_role(array['admin','mine_mate','foreman']));
+  with check (
+    public.has_any_role(array['admin'])
+    or (
+      public.has_any_role(array['mine_mate','foreman'])
+      and approval_status = 'Pending'
+      and approved_by is null
+      and approved_at is null
+    )
+  );
 create policy overtime_update on public.overtime_entries for update to authenticated
   using (public.has_any_role(array['admin'])) with check (public.has_any_role(array['admin']));
 create policy overtime_delete on public.overtime_entries for delete to authenticated

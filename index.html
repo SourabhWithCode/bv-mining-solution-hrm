@@ -41,7 +41,7 @@
         <div>
           <div class="eyebrow" id="overviewLabel">Today's overview</div>
           <h1>Welcome,Team BV Mining</h1>
-          <p>Workforce and PPE overview for the selected date.</p>
+          <p>Workforce, stock, and mining activity overview for the selected date.</p>
         </div>
       </section>
       <section class="overview">
@@ -106,9 +106,56 @@
           </div>
         </div>
       </section>
+      <section class="leave-overview blast-overview" aria-labelledby="blastOverviewTitle">
+        <div class="sectionhead leave-head">
+          <div><h2 id="blastOverviewTitle">Blasting Summary</h2><p id="blastSummaryDate">Blast counts for the selected date.</p></div>
+          <a class="leave-link" id="miningReportPageLink" href="mining-report.html">Open Mining Report <span aria-hidden="true">→</span></a>
+        </div>
+        <div class="blast-cards" id="blastSummary" aria-live="polite">
+          <article><span>1st shift</span><strong id="blastFirst">—</strong><small>blasts</small></article>
+          <article><span>2nd shift</span><strong id="blastSecond">—</strong><small>blasts</small></article>
+          <article><span>Night shift</span><strong id="blastNight">—</strong><small>blasts</small></article>
+          <article class="blast-total"><span>Date total</span><strong id="blastTotal">—</strong><small>blasts</small></article>
+        </div>
+      </section>
+      <section class="leave-overview" aria-labelledby="leaveOverviewTitle">
+        <div class="sectionhead leave-head">
+          <div>
+            <h2 id="leaveOverviewTitle">Leave requests</h2>
+            <p id="leaveSummary">Recent employee leave requests and their approval status.</p>
+          </div>
+          <a class="leave-link" id="leavePageLink" href="leave.html">Open leave management <span aria-hidden="true">→</span></a>
+        </div>
+        <div class="leave-table-wrap" id="dashboardLeaveRequests" aria-live="polite">
+          <div class="leave-empty">Loading leave requests…</div>
+        </div>
+      </section>
+      <section class="leave-overview overtime-overview" aria-labelledby="overtimeOverviewTitle">
+        <div class="sectionhead leave-head">
+          <div>
+            <h2 id="overtimeOverviewTitle">Overtime requests</h2>
+            <p id="overtimeSummary">Requests and approval status for the selected date.</p>
+          </div>
+          <a class="leave-link" id="shiftBoardPageLink" href="shift-dashboard.html">Open Shift Board <span aria-hidden="true">→</span></a>
+        </div>
+        <div class="leave-table-wrap" id="dashboardOvertimeRequests" aria-live="polite">
+          <div class="leave-empty">Loading overtime requests…</div>
+        </div>
+      </section>
+      <section class="leave-overview low-stock-overview" id="lowStockSection" aria-labelledby="lowStockTitle">
+        <div class="sectionhead leave-head">
+          <div>
+            <h2 id="lowStockTitle">Low stock alerts</h2>
+            <p id="lowStockSummary">Items at or below their minimum stock level.</p>
+          </div>
+          <a class="leave-link" id="stockManagementLink" href="ppe-stock.html">Manage stock <span aria-hidden="true">→</span></a>
+        </div>
+        <div class="leave-table-wrap" id="dashboardLowStock" aria-live="polite">
+          <div class="leave-empty">Checking stock levels…</div>
+        </div>
+      </section>
       <div class="note">
-        BV Mining Solution · Overview data is based on records saved in this
-        browser.
+        BV Mining Solution · Operational data is saved in Supabase.
       </div>
     </main>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script><script src="assets/js/supabase-config.js"></script><script src="assets/js/supabase-client.js"></script><script src="assets/js/app-bootstrap.js"></script><script>window.HRDB.boot().then(function(ready){if(!ready)return;var app=document.createElement("script");app.src="assets/js/index.js";document.body.appendChild(app)}).catch(function(error){window.HRDB.status("Supabase connection failed: "+error.message,true)})</script>

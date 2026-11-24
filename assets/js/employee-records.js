@@ -229,6 +229,89 @@ function renderExpiry() {
 }
 function render() {
   renderExpiry();
+  renderDataQuality();
+}
+function renderDataQuality() {
+  const alerts = [];
+  const requiredReview = [
+    ["employeeCode", "Employee Code"],
+    ["employeeNameAadhaar", "Employee name"],
+    ["designation", "Designation"],
+    ["department", "Department"],
+    ["location", "Location"],
+  ];
+  state.members.forEach((m) => {
+    const name = displayName(m);
+    const code = m.employeeCode || m.empCode || "";
+    requiredReview.forEach(([key, label]) => {
+      const value = key === "employeeCode" ? code : key === "employeeNameAadhaar" ? (m.employeeNameAadhaar || m.name || "") : m[key];
+      if (!String(value || "").trim()) alerts.push({ name, code, text: `Missing ${label}` });
+    });
+  });
+  [
+    ["employeeCode", "Employee Code"],
+    ["mobile", "Mobile number"],
+    ["aadhaar", "Aadhaar"],
+    ["pan", "PAN"],
+    ["uanNumber", "UAN Number"],
+  ].forEach(([key, label]) => {
+    const groups = new Map();
+    state.members.forEach((m) => {
+      const value = String(key === "employeeCode" ? (m.employeeCode || m.empCode || "") : m[key] || "").trim().toLowerCase();
+      if (value) groups.set(value, [...(groups.get(value) || []), m]);
+    });
+    groups.forEach((members) => {
+      if (members.length < 2) return;
+      members.forEach((m) => alerts.push({
+        name: displayName(m),
+        code: m.employeeCode || m.empCode || "",
+        text: `Duplicate ${label} found in ${members.length} employee records`,
+      }));
+    });
+  });
+  $("qualityCount").textContent = `${alerts.length} alert${alerts.length === 1 ? "" : "s"}`;
+  if (!alerts.length) {
+    $("qualityList").innerHTML = '<div class="no-expiry">No missing key details or duplicate identifiers found.</div>';
+    return;
+  }
+  $("qualityList").innerHTML = alerts.slice(0, 100).map((alert) =>
+    `<div class="quality-row"><div><strong>${esc(alert.name)}${alert.code ? ` · ${esc(alert.code)}` : ""}</strong><div class="quality-meta">${esc(alert.text)}</div></div><span class="quality-tag">Review</span></div>`
+  ).join("") + (alerts.length > 100 ? `<div class="no-expiry">Showing first 100 of ${alerts.length} alerts.</div>` : "");
+}
+
+function localToday() {
+  const date = new Date();
+  return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, "0")}-${String(date.getDate()).padStart(2, "0")}`;
+}
+
+async function loadWarningHistory() {
+  const target = $("warningHistory");
+  const { data, error } = await window.HRDB.client
+    .from("employee_warnings")
+    .select("id,employee_id,warning_date,reason,issued_by")
+    .order("warning_date", { ascending: false })
+    .limit(200);
+  if (error) {
+    target.innerHTML = `<div class="no-expiry">Could not load warnings. Run the Employee Actions database migration first. ${esc(error.message)}</div>`;
+    return;
+  }
+  const warnings = data || [];
+  if (!warnings.length) {
+    target.innerHTML = '<div class="no-expiry">No employee warnings have been recorded.</div>';
+    return;
+  }
+  const people = new Map(state.members.map((m) => [m.id, m]));
+  const userIds = [...new Set(warnings.map((warning) => warning.issued_by).filter(Boolean))];
+  let users = new Map();
+  if (userIds.length) {
+    const result = await window.HRDB.client.from("user_profiles").select("id,full_name,email").in("id", userIds);
+    if (!result.error) users = new Map((result.data || []).map((user) => [user.id, user]));
+  }
+  target.innerHTML = warnings.map((warning) => {
+    const person = people.get(warning.employee_id) || {};
+    const issuer = users.get(warning.issued_by) || {};
+    return `<div class="warning-row"><div><strong>${esc(person.id ? displayName(person) : "Employee record")}${person.employeeCode || person.empCode ? ` · ${esc(person.employeeCode || person.empCode)}` : ""}</strong><div class="warning-meta">Issued ${esc(warning.warning_date)} · By ${esc(issuer.full_name || issuer.email || "User")}</div><div class="warning-meta warning-reason">${esc(warning.reason)}</div></div><span class="warning-tag">Warning</span></div>`;
+  }).join("");
 }
 function validationMessages(values) {
   const warnings = [];
@@ -690,6 +773,60 @@ $("employeeForm").addEventListener("submit", (e) => {
   resetForm();
   toast(isNew ? "Employee record saved" : "Employee record updated");
 });
+$("warningDate").value = localToday();
+$("searchWarningEmployee").addEventListener("click", () => {
+  const query = $("warningEmployeeSearch").value.trim().toLowerCase();
+  const select = $("warningEmployee");
+  const status = $("warningEmployeeMatch");
+  select.disabled = true;
+  select.innerHTML = '<option value="">No matching employee</option>';
+  if (!query) { status.textContent = "Enter an Employee Code or name to search."; return; }
+  const matches = state.members.filter((employee) => {
+    const code = employee.employeeCode || employee.empCode || "";
+    const name = `${employee.employeeNameAadhaar || employee.name || ""} ${employee.firstName || ""} ${employee.surname || ""}`;
+    return `${code} ${name}`.toLowerCase().includes(query);
+  }).sort((a, b) => displayName(a).localeCompare(displayName(b)));
+  if (!matches.length) { status.textContent = "No employee found. Check the code or name."; return; }
+  select.innerHTML = '<option value="">Select employee</option>' + matches
+    .map((employee) => `<option value="${esc(employee.id)}">${esc(displayName(employee))}${employee.employeeCode || employee.empCode ? ` · ${esc(employee.employeeCode || employee.empCode)}` : ""}</option>`)
+    .join("");
+  select.disabled = false;
+  if (matches.length === 1) select.value = matches[0].id;
+  status.textContent = `${matches.length} matching employee${matches.length === 1 ? "" : "s"} found.`;
+});
+$("warningEmployeeSearch").addEventListener("keydown", (event) => {
+  if (event.key === "Enter") { event.preventDefault(); $("searchWarningEmployee").click(); }
+});
+$("warningEmployeeSearch").addEventListener("input", () => {
+  $("warningEmployee").disabled = true;
+  $("warningEmployee").innerHTML = '<option value="">Search for an employee first</option>';
+  $("warningEmployeeMatch").textContent = "";
+});
+$("warningForm").addEventListener("submit", async (event) => {
+  event.preventDefault();
+  const employeeId = $("warningEmployee").value;
+  const warningDate = $("warningDate").value;
+  const reason = $("warningReason").value.trim();
+  if (!employeeId || !warningDate || !reason) return;
+  const button = event.currentTarget.querySelector('[type="submit"]');
+  button.disabled = true;
+  button.textContent = "Saving…";
+  const { error } = await window.HRDB.client.from("employee_warnings").insert({
+    employee_id: employeeId,
+    warning_date: warningDate,
+    reason,
+    issued_by: window.HRDB.user.id,
+  });
+  button.disabled = false;
+  button.textContent = "Record warning";
+  if (error) {
+    window.HRDB.status(`Could not record warning: ${error.message}`, true);
+    return;
+  }
+  $("warningReason").value = "";
+  window.HRDB.status("Employee warning recorded.");
+  await loadWarningHistory();
+});
 cancelEdit.onclick = () => {
   resetForm();
   validationAlerts.classList.remove("show");
@@ -710,3 +847,4 @@ $("detailDialog").addEventListener("click", (e) => {
 save();
 resetForm();
 render();
+loadWarningHistory();

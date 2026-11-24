@@ -344,6 +344,20 @@
       .expiry-panel {
         margin-bottom: 16px;
       }
+      .warnings-panel,.quality-panel{margin-bottom:16px}
+      .warning-form{display:grid;grid-template-columns:minmax(190px,1.2fr) minmax(150px,.7fr) minmax(240px,2fr) auto;gap:10px;align-items:end;padding:15px 16px;border-bottom:1px solid var(--line)}
+      .warning-form label{display:grid;gap:5px;color:var(--muted);font-size:11px;font-weight:700}
+      .warning-form input,.warning-form select,.warning-form textarea{width:100%;border:1px solid var(--line);border-radius:8px;background:white;padding:9px 10px;color:var(--ink);font:12px 'DM Sans'}
+      .warning-employee-field{display:grid;gap:7px}.warning-search-row{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:6px}.warning-search-button{border:1px solid #c7ddd0;border-radius:8px;background:#f3f8f5;color:var(--green);padding:8px 11px;font:700 11px 'DM Sans';cursor:pointer}.warning-match{min-height:14px;color:var(--muted);font-size:10px}.warning-form select:disabled{background:#f3f5f3;color:#87938d}
+      .warning-submit{border:1px solid #c77e75;border-radius:8px;background:#fff2f0;color:#9d342c;padding:10px 12px;font:700 12px 'DM Sans';cursor:pointer;white-space:nowrap}
+      .warning-history,.quality-list{padding:0 16px 12px}
+      .warning-row,.quality-row{display:flex;justify-content:space-between;align-items:flex-start;gap:12px;padding:11px 2px;border-top:1px solid #eff2ef;font-size:12px}
+      .warning-row:first-child,.quality-row:first-child{border-top:0}
+      .warning-row strong,.quality-row strong{display:block;font-size:12px}
+      .warning-meta,.quality-meta{margin-top:3px;color:var(--muted);font-size:11px;line-height:1.5}
+      .warning-reason{max-width:600px;margin-top:4px;white-space:pre-wrap;overflow-wrap:anywhere}
+      .warning-tag,.quality-tag{flex:none;border-radius:20px;background:#fff0ef;color:#9d342c;padding:5px 8px;font-size:10px;font-weight:700}
+      .quality-count{flex:none;border-radius:20px;background:#fff4cf;color:#795600;padding:6px 10px;font-size:11px}
       .expiry-stats {
         display: grid;
         grid-template-columns: repeat(3, 1fr);
@@ -540,6 +554,8 @@
         }
       }
       @media (max-width: 620px) {
+        .warning-form{grid-template-columns:1fr}
+        .warning-row,.quality-row{flex-direction:column}
         .expiry-row {
           grid-template-columns: 1fr auto;
         }

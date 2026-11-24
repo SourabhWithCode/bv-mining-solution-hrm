@@ -42,6 +42,25 @@
           the serial number is generated automatically.
         </p>
       </section>
+      <section class="panel warnings-panel">
+        <div class="head"><div><h2>Employee warnings</h2><span>Record the issue, date and reason. Warnings do not block employee records.</span></div></div>
+        <form id="warningForm" class="warning-form">
+          <div class="warning-employee-field">
+            <label for="warningEmployeeSearch">Find employee by Employee Code or name</label>
+            <div class="warning-search-row"><input id="warningEmployeeSearch" type="search" maxlength="100" placeholder="Enter Employee Code or name"><button class="warning-search-button" id="searchWarningEmployee" type="button">Search</button></div>
+            <select id="warningEmployee" required disabled aria-label="Select matching employee"><option value="">Search for an employee first</option></select>
+            <span id="warningEmployeeMatch" class="warning-match" aria-live="polite"></span>
+          </div>
+          <label>Date issued<input id="warningDate" type="date" required></label>
+          <label class="reason-field">Reason for warning<textarea id="warningReason" maxlength="500" rows="2" required placeholder="Enter the reason for issuing this warning"></textarea></label>
+          <button class="warning-submit" type="submit">Record warning</button>
+        </form>
+        <div class="warning-history" id="warningHistory" aria-live="polite"><div class="no-expiry">Loading warning records…</div></div>
+      </section>
+      <section class="panel quality-panel">
+        <div class="head"><div><h2>Employee data warnings</h2><span>Missing key details and duplicate identifiers to review. These warnings do not prevent saving.</span></div><b class="quality-count" id="qualityCount">0 alerts</b></div>
+        <div class="quality-list" id="qualityList"></div>
+      </section>
       <section class="panel expiry-panel">
         <div class="head">
           <h2>VTC, Medical & Authorisation expiry watch</h2>
