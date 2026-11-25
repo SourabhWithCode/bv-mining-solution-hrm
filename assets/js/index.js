@@ -10,7 +10,7 @@ function today(){const d=new Date();return `${d.getFullYear()}-${String(d.getMon
 function read(key,fallback){try{return JSON.parse(localStorage.getItem(key))||fallback}catch{return fallback}}
 let selectedDate=today();
 const overtimeOverrides={};
-let blastSummaryRequest=0,financeDataPromise=null,financeRequest=0;
+let blastSummaryRequest=0,blastSummaryDateRequested=null,blastSummaryDisplayedDate=null,financeDataPromise=null,financeRequest=0;
 const accountingRoles=['admin','hr','accountant','director'];
 function financeMoney(value){return new Intl.NumberFormat('en-IN',{style:'currency',currency:'INR',minimumFractionDigits:2}).format(Number(value)||0)}
 async function loadFinanceData(){
@@ -39,16 +39,18 @@ async function renderFinancialOverview(date){
  try{const data=await loadFinanceData();if(request!==financeRequest)return;const totals=calculateDashboardFinance(data,date);$('financeIncome').textContent=financeMoney(totals.income);$('financeExpenses').textContent=financeMoney(totals.expenses);$('financeCash').textContent=financeMoney(totals.cash);$('financeBank').textContent=financeMoney(totals.bank);$('financePendingPayments').textContent=financeMoney(totals.pendingPayments);$('financePendingSalaries').textContent=financeMoney(totals.pendingSalaries);$('financeIncomeDate').textContent=date;$('financeExpensesDate').textContent=date}
  catch(error){if(request!==financeRequest)return;console.error('Financial overview could not load:',error);['financeIncome','financeExpenses','financeCash','financeBank','financePendingPayments','financePendingSalaries'].forEach(id=>$(id).textContent='—');$('financialOverviewDate').textContent='Financial data is unavailable. Check Accounting setup and access.'}
 }
-async function renderBlastSummary(date){
+async function renderBlastSummary(date,force=false){
+ if(!force&&blastSummaryDateRequested===date)return;
  const request=++blastSummaryRequest;
+ blastSummaryDateRequested=date;
  $('blastSummaryDate').textContent=`Blast counts for ${leaveDate(date)}.`;
- ['blastFirst','blastSecond','blastNight','blastTotal'].forEach(id=>$(id).textContent='…');
+ if(blastSummaryDisplayedDate!==date)['blastFirst','blastSecond','blastNight','blastTotal'].forEach(id=>$(id).textContent='…');
  const {data,error}=await window.HRDB.client.rpc('get_mining_blast_summary',{p_report_date:date});
  if(request!==blastSummaryRequest)return;
  let totals={first:0,second:0,night:0};
  if(error){console.error(error);let cached=null;try{cached=JSON.parse(localStorage.getItem(BLAST_CACHE_KEY))}catch{}if(!cached||cached.date!==date){['blastFirst','blastSecond','blastNight','blastTotal'].forEach(id=>$(id).textContent='—');$('blastSummaryDate').textContent='Could not load blast totals. Connect to the network to refresh this summary.';return}totals=cached.totals;$('blastSummaryDate').textContent=`Offline · last updated ${new Date(cached.updatedAt).toLocaleString('en-IN')}.`}
  else{(data||[]).forEach(row=>{if(Object.hasOwn(totals,row.shift))totals[row.shift]=Number(row.blast_count)||0});localStorage.setItem(BLAST_CACHE_KEY,JSON.stringify({date,totals,updatedAt:new Date().toISOString()}))}
- $('blastFirst').textContent=totals.first;$('blastSecond').textContent=totals.second;$('blastNight').textContent=totals.night;$('blastTotal').textContent=totals.first+totals.second+totals.night;
+ $('blastFirst').textContent=totals.first;$('blastSecond').textContent=totals.second;$('blastNight').textContent=totals.night;$('blastTotal').textContent=totals.first+totals.second+totals.night;blastSummaryDisplayedDate=date;
 }
 function render(){
  const date=selectedDate;
@@ -157,4 +159,4 @@ function moveDate(amount){
 $('dashboardDate').addEventListener('change',e=>{selectedDate=e.target.value||today();render()});
 $('prevDate').addEventListener('click',()=>moveDate(-1));
 $('nextDate').addEventListener('click',()=>moveDate(1));
-render();window.addEventListener('storage',render);
+render();window.addEventListener('storage',event=>{render();if(event.key==='hr-mining-reports-cache-v1')renderBlastSummary(selectedDate,true)});window.addEventListener('online',()=>renderBlastSummary(selectedDate,true));window.addEventListener('focus',()=>renderBlastSummary(selectedDate,true));
