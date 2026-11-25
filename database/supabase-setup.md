@@ -15,9 +15,12 @@ In the Supabase project, open **SQL Editor** and run the files in this order:
 7. [admin-only-editing-migration.sql](admin-only-editing-migration.sql) on an existing project, to apply the current record-entry access and keep saved-record edits/deletions Admin-only.
 8. [audit-log-migration.sql](audit-log-migration.sql) to create the Admin-only audit trail and its database triggers.
 9. [employee-actions-migration.sql](employee-actions-migration.sql) to add employee warnings, status changes/history, and suspend/reactivate controls.
-10. [overtime-approval-migration.sql](overtime-approval-migration.sql) to add Admin-only overtime approval status and protect approvals with RLS.
+10. [overtime-approval-migration.sql](overtime-approval-migration.sql) to add overtime approval status and protect approvals with RLS.
 11. [mining-reports-migration.sql](mining-reports-migration.sql) to add Mine Mate/Foreman shift reports and aggregate blast totals for the Dashboard.
 12. [user-page-access-migration.sql](user-page-access-migration.sql) to store individual page access separately from role and apply those grants to app pages and record entry.
+13. [director-approval-migration.sql](director-approval-migration.sql) to add the Director role and allow Directors to approve or reject leave and overtime requests.
+14. [owner-record-editing-migration.sql](owner-record-editing-migration.sql) to let users edit/delete their own Pending leave requests and edit their own Mining Reports for 24 hours.
+15. [device-session-migration.sql](device-session-migration.sql) to allow one active device session per account and sign out an older device after the next session check.
 
 If this is an older project with the earlier employee schema, run [supabase-employee-fields-migration.sql](supabase-employee-fields-migration.sql) before the app updates file.
 
@@ -36,7 +39,9 @@ The audit trail begins when [audit-log-migration.sql](audit-log-migration.sql) i
    where email = 'your-email@example.com';
    ```
 
-New accounts are assigned one of: Admin, HR, Accountant, Store, Mechanical, Mine Mate, Foreman, Project Manager, or Assistant Project Manager. Admins can separately select which app pages each non-admin account can open, regardless of role. Dashboard access is always available. Audit Log and User Management remain Admin-only. Page grants allow entry to the selected page; saved-record edits and deletions stay Admin-only. Admin can see and approve all leave requests; other users can submit and see their own requests. The Dashboard displays aggregate blast counts by shift for its selected date.
+New accounts are assigned one of: Admin, HR, Accountant, Store, Mechanical, Mine Mate, Foreman, Project Manager, Assistant Project Manager, or Director. Admins can separately select which app pages each non-admin account can open, regardless of role. Dashboard access is always available. Audit Log and User Management remain Admin-only. Page grants allow entry to the selected page. Users can edit or delete their own Pending leave requests; once approved or rejected, only Admins can manage them. The author of a Mining Report can edit it for 24 hours. Admins retain full record management access. Admin and Director can review and approve/reject all leave requests. Admin and Director can approve/reject overtime requests on the Dashboard. The Dashboard displays aggregate blast counts by shift for its selected date.
+
+With the device-session migration installed, a successful sign-in claims that account's active device slot. Any other signed-in device checks the slot every 10 seconds and signs out when it is replaced; an offline device is signed out when it reconnects and verifies its session. This is browser-enforced session control, so an already-open client may remain active until its next check.
 
 ## 3. Enable admin-only account management
 

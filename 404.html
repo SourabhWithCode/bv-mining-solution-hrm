@@ -1,0 +1,44 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <meta name="theme-color" content="#123f32">
+  <title>404 | BV Mining Solution</title>
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Manrope:wght@600;700;800&display=swap');
+    *{box-sizing:border-box}body{margin:0;min-height:100vh;display:grid;place-items:center;padding:24px;background:radial-gradient(circle at 50% 0,#e6f0e9 0,#f4f7f3 48%,#eef3ef 100%);color:#17211e;font:15px 'DM Sans',sans-serif}.card{width:min(100%,620px);padding:clamp(26px,6vw,54px);border:1px solid #e2eae4;border-radius:26px;background:#ffffffed;text-align:center;box-shadow:0 24px 80px #173d3014}.brand{display:flex;align-items:center;justify-content:center;gap:11px;color:#123f32}.mark{width:42px;height:42px;display:grid;place-items:center;border-radius:14px;background:linear-gradient(145deg,#176b52,#123f32);color:#fff;font:800 14px Manrope}.brand strong{font:800 17px Manrope}.art{width:174px;height:142px;margin:28px auto 12px;display:grid;place-items:center;position:relative}.helmet{width:116px;height:76px;position:relative;display:grid;place-items:center;border-radius:70px 70px 24px 24px;background:linear-gradient(145deg,#ffd878,#f3a928);box-shadow:inset 0 -8px 0 #df8b17,0 15px 24px #b7772130;transform:rotate(-8deg)}.helmet:before{content:'';position:absolute;top:-13px;left:45px;width:25px;height:31px;border:8px solid #f4b532;border-bottom:0;border-radius:18px 18px 0 0}.helmet:after{content:'';position:absolute;bottom:-9px;left:-12px;width:140px;height:17px;border-radius:20px;background:#f7c14a;box-shadow:inset 0 -5px 0 #dd941e}.lamp{position:absolute;z-index:1;top:13px;left:50%;transform:translateX(-50%);width:19px;height:25px;border-radius:8px 8px 5px 5px;background:#fff8df;border:4px solid #db941f;box-shadow:0 0 26px #ffdf79}.stone{position:absolute;bottom:7px;left:14px;width:25px;height:21px;border-radius:9px 6px 10px 6px;background:#87968c;transform:rotate(25deg)}.stone.two{left:auto;right:10px;bottom:12px;width:19px;height:18px;background:#b2bdb5;transform:rotate(-18deg)}.eyebrow{color:#176b52;font-size:11px;font-weight:800;letter-spacing:1.5px;text-transform:uppercase}h1{margin:9px 0 10px;font:800 clamp(30px,7vw,42px) Manrope;letter-spacing:-1.5px;line-height:1.12}.message{max-width:440px;margin:0 auto;color:#6e7b73;line-height:1.65}.quip{margin:14px auto 0;color:#41544a;font-size:13px;font-weight:600}.actions{display:flex;justify-content:center;gap:10px;flex-wrap:wrap;margin-top:26px}.button{display:inline-flex;min-height:44px;align-items:center;justify-content:center;padding:0 17px;border:1px solid #dce6df;border-radius:11px;background:#fff;color:#26372f;text-decoration:none;font:700 13px 'DM Sans',sans-serif;cursor:pointer}.button.primary{border-color:#176b52;background:#176b52;color:white}.button:hover{filter:brightness(.97);transform:translateY(-1px)}.foot{margin:26px 0 0;color:#a0aaa4;font-size:11px}@media(max-width:480px){.card{border-radius:20px}.art{margin-top:20px}}
+  </style>
+  <style>
+    body{background:radial-gradient(circle at 50% 0,#e5e7e9 0,#f0f2f3 48%,#e9ecee 100%);color:#292e33}.brand{color:#292e33}.mark{background:linear-gradient(145deg,#515960,#292e33);color:#ffd24d;box-shadow:0 0 0 3px #f1dfaa}.eyebrow{color:#906700}.button.primary{border-color:#d8a719;background:#f2c13d;color:#292e33}
+  </style>
+</head>
+<body>
+  <main class="card">
+    <div class="brand"><span class="mark">BV</span><strong>BV Mining Solution</strong></div>
+    <div class="art" aria-hidden="true"><span class="stone"></span><span class="stone two"></span><span class="helmet"><i class="lamp"></i></span></div>
+    <div class="eyebrow" id="eyebrow">404 · Page not found</div>
+    <h1 id="title">Oops! We hit a dead end.</h1>
+    <p class="message" id="message">This page seems to have taken an unexpected underground detour.</p>
+    <p class="quip" id="quip">Even our helmet lamp couldn't find it.</p>
+    <div class="actions"><a class="button primary" id="homeLink" href="index.html">Back to Dashboard</a><button class="button" type="button" onclick="history.back()">Go back</button></div>
+    <p class="foot">BV Mining Solution · Check the address or ask your administrator for access.</p>
+  </main>
+  <script>
+    (function(){
+      const project='bv-mining-solution-hrm';
+      const path=location.pathname;
+      const base=path.startsWith('/'+project+'/')?'/'+project+'/':'/';
+      document.getElementById('homeLink').href=base+'index.html';
+      const params=new URLSearchParams(location.search);
+      if(params.get('reason')==='restricted'){
+        document.title='Page Access | BV Mining Solution';
+        document.getElementById('eyebrow').textContent='Access checkpoint';
+        document.getElementById('title').textContent='This page is behind a safety barrier.';
+        document.getElementById('message').textContent='Your account does not have access to this page. Ask an administrator to update your page permissions.';
+        document.getElementById('quip').textContent='No hard hat or secret tunnel can bypass permissions.';
+      }
+    })();
+  </script>
+</body>
+</html>

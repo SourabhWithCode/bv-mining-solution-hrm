@@ -1,4 +1,5 @@
 /* Shared responsive rules for the static HR app. Loaded after page styles. */
+@import url('mining-theme.css');
 *,*::before,*::after{box-sizing:border-box}
 html{width:100%;min-width:320px;scroll-padding-top:16px;-webkit-text-size-adjust:100%;text-size-adjust:100%}
 body{width:100%;min-width:320px;overflow-x:hidden}

@@ -5,7 +5,7 @@ const json = (body: Record<string, unknown>, status = 200) => new Response(JSON.
   headers: { ...corsHeaders, 'Content-Type': 'application/json' },
 });
 const assignablePages=['dashboard','employee_records','employees_data','shift_board','mining_report','attendance','monthly_attendance','leave','stock_management','ppe_issue_records','stock_returns','reports'];
-const rolePages:Record<string,string[]>={admin:[...assignablePages,'audit_log','user_management'],hr:assignablePages,accountant:assignablePages,store:assignablePages,mechanical:assignablePages,mine_mate:assignablePages,foreman:assignablePages,project_manager:assignablePages,assistant_project_manager:assignablePages};
+const rolePages:Record<string,string[]>={admin:[...assignablePages,'audit_log','user_management'],hr:assignablePages,accountant:assignablePages,store:assignablePages,mechanical:assignablePages,mine_mate:assignablePages,foreman:assignablePages,project_manager:assignablePages,assistant_project_manager:assignablePages,director:assignablePages};
 function pageAccess(input:unknown,role:string):Record<string,boolean>|null{
   const allowed=rolePages[role]||[];if(input===undefined)return Object.fromEntries(allowed.map(key=>[key,true]));
   if(!input||typeof input!=='object'||Array.isArray(input))return null;
@@ -83,7 +83,7 @@ Deno.serve(async req => {
   const role = typeof input.role === 'string' ? input.role : '';
   if (!fullName || fullName.length > 120) return json({ error: 'Enter a name up to 120 characters.' }, 400);
   if (!designation || designation.length > 80) return json({ error: 'Enter a designation up to 80 characters.' }, 400);
-  if (!['admin', 'hr', 'accountant', 'store', 'mechanical', 'mine_mate', 'foreman', 'project_manager', 'assistant_project_manager'].includes(role)) return json({ error: 'Choose a valid access role.' }, 400);
+  if (!['admin', 'hr', 'accountant', 'store', 'mechanical', 'mine_mate', 'foreman', 'project_manager', 'assistant_project_manager', 'director'].includes(role)) return json({ error: 'Choose a valid access role.' }, 400);
   const selectedPageAccess=pageAccess(input.pageAccess,role);
   if(!selectedPageAccess)return json({error:'Page access contains pages that are not available for this role.'},400);
   if (userId === userData.user.id && role !== 'admin') return json({ error: 'You cannot remove your own Admin role.' }, 400);

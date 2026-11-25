@@ -8,8 +8,8 @@
   const editForm = document.getElementById('editUserForm');
   const editFeedback = document.getElementById('editFeedback');
   const saveButton = document.getElementById('saveUser');
-  const roleName = { admin: 'Admin', hr: 'HR', accountant: 'Accountant', store: 'Store', mechanical: 'Mechanical', mine_mate: 'Mine Mate', foreman: 'Foreman', project_manager: 'Project Manager', assistant_project_manager: 'Assistant Project Manager' };
-  const roles = ['admin','hr','accountant','store','mechanical','mine_mate','foreman','project_manager','assistant_project_manager'];
+  const roleName = { admin: 'Admin', hr: 'HR', accountant: 'Accountant', store: 'Store', mechanical: 'Mechanical', mine_mate: 'Mine Mate', foreman: 'Foreman', project_manager: 'Project Manager', assistant_project_manager: 'Assistant Project Manager', director:'Director' };
+  const roles = ['admin','hr','accountant','store','mechanical','mine_mate','foreman','project_manager','assistant_project_manager','director'];
   const pages = [
     ['dashboard','Dashboard',roles],['employee_records','Employee Records',['admin','hr']],['employees_data','Employees Data',['admin','hr']],
     ['shift_board','Shift Board',['admin','mine_mate','foreman']],['mining_report','Mining Report',['admin','mine_mate','foreman']],

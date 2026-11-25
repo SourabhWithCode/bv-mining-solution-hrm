@@ -2,6 +2,7 @@ const SHIFT_KEY='shift-board-v1';
 const ISSUE_KEY='hr-item-issues-v1';
 const LEAVE_KEY='hr-leave-v1';
 const STOCK_KEY='hr-ppe-stock-v1';
+const BLAST_CACHE_KEY='hr-blast-summary-cache-v1';
 const $=id=>document.getElementById(id);
 const esc=value=>String(value??'').replace(/[&<>"']/g,character=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[character]));
 function leaveDate(value){if(!value)return '—';const date=new Date(`${value}T12:00:00`);return Number.isNaN(date.getTime())?value:new Intl.DateTimeFormat('en-IN',{day:'numeric',month:'short',year:'numeric'}).format(date)}
@@ -16,8 +17,9 @@ async function renderBlastSummary(date){
  ['blastFirst','blastSecond','blastNight','blastTotal'].forEach(id=>$(id).textContent='…');
  const {data,error}=await window.HRDB.client.rpc('get_mining_blast_summary',{p_report_date:date});
  if(request!==blastSummaryRequest)return;
- if(error){console.error(error);['blastFirst','blastSecond','blastNight','blastTotal'].forEach(id=>$(id).textContent='—');$('blastSummaryDate').textContent='Could not load blast totals. Apply the Mining Report database migration.';return}
- const totals={first:0,second:0,night:0};(data||[]).forEach(row=>{if(Object.hasOwn(totals,row.shift))totals[row.shift]=Number(row.blast_count)||0});
+ let totals={first:0,second:0,night:0};
+ if(error){console.error(error);let cached=null;try{cached=JSON.parse(localStorage.getItem(BLAST_CACHE_KEY))}catch{}if(!cached||cached.date!==date){['blastFirst','blastSecond','blastNight','blastTotal'].forEach(id=>$(id).textContent='—');$('blastSummaryDate').textContent='Could not load blast totals. Connect to the network to refresh this summary.';return}totals=cached.totals;$('blastSummaryDate').textContent=`Offline · last updated ${new Date(cached.updatedAt).toLocaleString('en-IN')}.`}
+ else{(data||[]).forEach(row=>{if(Object.hasOwn(totals,row.shift))totals[row.shift]=Number(row.blast_count)||0});localStorage.setItem(BLAST_CACHE_KEY,JSON.stringify({date,totals,updatedAt:new Date().toISOString()}))}
  $('blastFirst').textContent=totals.first;$('blastSecond').textContent=totals.second;$('blastNight').textContent=totals.night;$('blastTotal').textContent=totals.first+totals.second+totals.night;
 }
 function render(){
@@ -69,13 +71,13 @@ function renderOvertimeRequests(shift,date,assignments){
  requests.forEach(request=>{const status=request.entry.approvalStatus||'Pending';if(Object.hasOwn(counts,status))counts[status]++});
  $('overtimeSummary').textContent=`${counts.Pending} pending · ${counts.Approved} approved · ${counts.Rejected} rejected · ${date}`;
  if(!requests.length){$('dashboardOvertimeRequests').innerHTML='<div class="leave-empty">No overtime requests for this date.</div>';return}
- const admin=window.HRDB.role==='admin';
+ const canApprove=window.HRDB.canApprove;
  $('dashboardOvertimeRequests').innerHTML=`<table class="leave-table"><thead><tr><th>Employee</th><th>Shift</th><th>OT hours</th><th>Reason</th><th>Request status</th></tr></thead><tbody>${requests.map(({employeeId,entry,member})=>{
   const status=entry.approvalStatus||'Pending',tone=status.toLowerCase();
   const name=member.name||member.employeeNameAadhaar||member.employeeCode||'Employee';
   const code=member.employeeCode||member.empCode||'';
   const shiftName=({first:'1st shift',second:'2nd shift',night:'Night shift',rest:'Rest'})[assignments[employeeId]||'rest'];
-  const statusControl=admin
+  const statusControl=canApprove
    ? `<select class="overtime-status-select ${esc(tone)}" data-overtime-status="${esc(employeeId)}" data-work-date="${esc(date)}" aria-label="Overtime request status for ${esc(name)}">${['Pending','Approved','Rejected'].map(option=>`<option ${status===option?'selected':''}>${option}</option>`).join('')}</select>${entry.approvedAt?`<small class="overtime-meta">Reviewed ${esc(new Date(entry.approvedAt).toLocaleString('en-IN'))}</small>`:''}`
    : `<span class="overtime-status ${esc(tone)}">${esc(status)}</span>${entry.approvedAt?`<small class="overtime-meta">Reviewed ${esc(new Date(entry.approvedAt).toLocaleString('en-IN'))}</small>`:''}`;
   return `<tr><td><strong>${esc(name)}</strong>${code?`<span class="leave-sub">${esc(code)}</span>`:''}</td><td>${esc(shiftName)}</td><td>${Number(entry.hours)} h</td><td>${esc(entry.reason||'—')}</td><td>${statusControl}</td></tr>`;
@@ -84,9 +86,11 @@ function renderOvertimeRequests(shift,date,assignments){
   const status=select.value,employeeId=select.dataset.overtimeStatus,workDate=select.dataset.workDate;
   const approver=status==='Pending'?null:window.HRDB.user.id;
   const approvedAt=status==='Pending'?null:new Date().toISOString();
+  const payload={approval_status:status,approved_by:approver,approved_at:approvedAt,updated_at:new Date().toISOString()};
   select.disabled=true;
-  const {error}=await window.HRDB.client.from('overtime_entries').update({approval_status:status,approved_by:approver,approved_at:approvedAt,updated_at:new Date().toISOString()}).eq('employee_id',employeeId).eq('work_date',workDate).select('id').single();
-  if(error){window.HRDB.status(`Could not update overtime request: ${error.message}`,true);render();return}
+  if(!navigator.onLine){window.HRDB.queueDatabaseWrite({table:'overtime_entries',action:'update',match:{employee_id:employeeId,work_date:workDate},payload});overtimeOverrides[workDate]||={};overtimeOverrides[workDate][employeeId]={approvalStatus:status,approvedBy:approver||'',approvedAt:approvedAt||''};window.HRDB.status('Overtime approval saved on this device and is waiting to sync.');render();return}
+  const {error}=await window.HRDB.client.from('overtime_entries').update(payload).eq('employee_id',employeeId).eq('work_date',workDate).select('id').single();
+  if(error){if(/failed to fetch|networkerror|network request failed|fetch failed|load failed/i.test(String(error.message||error))){window.HRDB.queueDatabaseWrite({table:'overtime_entries',action:'update',match:{employee_id:employeeId,work_date:workDate},payload});overtimeOverrides[workDate]||={};overtimeOverrides[workDate][employeeId]={approvalStatus:status,approvedBy:approver||'',approvedAt:approvedAt||''};window.HRDB.status('Connection lost. Overtime approval is saved on this device and will sync.')}else window.HRDB.status(`Could not update overtime request: ${error.message}`,true);render();return}
   overtimeOverrides[workDate]||={};
   overtimeOverrides[workDate][employeeId]={approvalStatus:status,approvedBy:approver||'',approvedAt:approvedAt||''};
   window.HRDB.status(`Overtime request ${status.toLowerCase()}.`);

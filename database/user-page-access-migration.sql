@@ -9,6 +9,7 @@ set page_access = case role
   when 'store' then '{"dashboard":true,"leave":true,"stock_management":true,"ppe_issue_records":true,"stock_returns":true}'::jsonb
   when 'mine_mate' then '{"dashboard":true,"leave":true,"shift_board":true,"mining_report":true}'::jsonb
   when 'foreman' then '{"dashboard":true,"leave":true,"shift_board":true,"mining_report":true}'::jsonb
+  when 'director' then '{"dashboard":true,"leave":true}'::jsonb
   else '{"dashboard":true,"leave":true}'::jsonb
 end
 where page_access = '{}'::jsonb;

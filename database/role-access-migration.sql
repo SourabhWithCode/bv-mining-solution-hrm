@@ -11,7 +11,7 @@ where role in ('supervisor','viewer');
 
 alter table public.user_profiles alter column role set default 'accountant';
 alter table public.user_profiles add constraint user_profiles_role_check
-  check (role in ('admin','hr','accountant','store','mechanical','mine_mate','foreman','project_manager','assistant_project_manager'));
+  check (role in ('admin','hr','accountant','store','mechanical','mine_mate','foreman','project_manager','assistant_project_manager','director'));
 
 -- Keep newly provisioned Auth users valid under the new role constraint.
 create or replace function public.handle_new_user()

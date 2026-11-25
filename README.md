@@ -7,6 +7,7 @@ Static HR, shift, attendance, leave, and stock management app. No build step is 
 ```text
 .
 ├── index.html                 # Dashboard (login protected)
+├── 404.html                   # Friendly missing-page and restricted-access page
 ├── login.html                 # Supabase Auth sign-in
 ├── attendance.html
 ├── admin-users.html           # Admin-only account creation
@@ -44,7 +45,7 @@ Open [http://localhost:8000](http://localhost:8000). Supabase Auth redirect URLs
 
 ### GitHub Pages
 
-Upload the full project contents to a repository. In **Settings → Pages**, select **Deploy from a branch**, choose `main` and `/ (root)`. `index.html` is the entry page. Keep links relative; do not upload just the HTML files.
+Upload the full project contents to a repository. In **Settings → Pages**, select **Deploy from a branch**, choose `main` and `/ (root)`. `index.html` is the entry page and `404.html` handles unknown URLs. Keep links relative; do not upload just the HTML files.
 
 ### Netlify
 

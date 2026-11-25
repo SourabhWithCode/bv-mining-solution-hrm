@@ -291,11 +291,17 @@ async function loadWarningHistory() {
     .select("id,employee_id,warning_date,reason,issued_by")
     .order("warning_date", { ascending: false })
     .limit(200);
+  let warnings = data || [];
   if (error) {
-    target.innerHTML = `<div class="no-expiry">Could not load warnings. Run the Employee Actions database migration first. ${esc(error.message)}</div>`;
-    return;
-  }
-  const warnings = data || [];
+    try { warnings = JSON.parse(localStorage.getItem("hr-employee-warnings-cache-v1")) || []; } catch { warnings = []; }
+    if (!warnings.length && !window.HRDB.getPendingDatabaseOps().some(operation => operation.table === "employee_warnings")) {
+      target.innerHTML = `<div class="no-expiry">Could not load warnings. Run the Employee Actions database migration first. ${esc(error.message)}</div>`;
+      return;
+    }
+  } else localStorage.setItem("hr-employee-warnings-cache-v1", JSON.stringify(warnings));
+  const warningRows = new Map(warnings.map(warning => [warning.id, warning]));
+  window.HRDB.getPendingDatabaseOps().filter(operation => operation.table === "employee_warnings" && operation.action === "insert").forEach(operation => warningRows.set(operation.recordId, {...operation.payload, id: operation.recordId, pendingSync: true}));
+  warnings = [...warningRows.values()];
   if (!warnings.length) {
     target.innerHTML = '<div class="no-expiry">No employee warnings have been recorded.</div>';
     return;
@@ -310,7 +316,7 @@ async function loadWarningHistory() {
   target.innerHTML = warnings.map((warning) => {
     const person = people.get(warning.employee_id) || {};
     const issuer = users.get(warning.issued_by) || {};
-    return `<div class="warning-row"><div><strong>${esc(person.id ? displayName(person) : "Employee record")}${person.employeeCode || person.empCode ? ` · ${esc(person.employeeCode || person.empCode)}` : ""}</strong><div class="warning-meta">Issued ${esc(warning.warning_date)} · By ${esc(issuer.full_name || issuer.email || "User")}</div><div class="warning-meta warning-reason">${esc(warning.reason)}</div></div><span class="warning-tag">Warning</span></div>`;
+    return `<div class="warning-row"><div><strong>${esc(person.id ? displayName(person) : "Employee record")}${person.employeeCode || person.empCode ? ` · ${esc(person.employeeCode || person.empCode)}` : ""}</strong><div class="warning-meta">Issued ${esc(warning.warning_date)} · By ${esc(issuer.full_name || issuer.email || "User")}${warning.pendingSync ? " · Pending sync" : ""}</div><div class="warning-meta warning-reason">${esc(warning.reason)}</div></div><span class="warning-tag">Warning</span></div>`;
   }).join("");
 }
 function validationMessages(values) {
@@ -811,12 +817,24 @@ $("warningForm").addEventListener("submit", async (event) => {
   const button = event.currentTarget.querySelector('[type="submit"]');
   button.disabled = true;
   button.textContent = "Saving…";
-  const { error } = await window.HRDB.client.from("employee_warnings").insert({
+  const recordId = crypto.randomUUID();
+  const warning = {
+    id: recordId,
     employee_id: employeeId,
     warning_date: warningDate,
     reason,
     issued_by: window.HRDB.user.id,
-  });
+  };
+  let error = null, queued = false;
+  if (!navigator.onLine) { window.HRDB.queueDatabaseWrite({table: "employee_warnings", action: "insert", recordId, payload: warning}); queued = true; }
+  else {
+    const result = await window.HRDB.client.from("employee_warnings").insert(warning);
+    error = result.error;
+    if (error && /failed to fetch|networkerror|network request failed|fetch failed|load failed/i.test(String(error.message || error))) {
+      window.HRDB.queueDatabaseWrite({table: "employee_warnings", action: "insert", recordId, payload: warning});
+      error = null; queued = true;
+    }
+  }
   button.disabled = false;
   button.textContent = "Record warning";
   if (error) {
@@ -824,7 +842,7 @@ $("warningForm").addEventListener("submit", async (event) => {
     return;
   }
   $("warningReason").value = "";
-  window.HRDB.status("Employee warning recorded.");
+  window.HRDB.status(queued ? "Warning saved on this device and is waiting to sync." : "Employee warning recorded.");
   await loadWarningHistory();
 });
 cancelEdit.onclick = () => {

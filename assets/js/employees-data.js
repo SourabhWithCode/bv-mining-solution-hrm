@@ -90,24 +90,34 @@ async function saveStatus(event) {
   event.preventDefault();const form=event.currentTarget,button=form.querySelector('[type="submit"]');
   button.disabled=true;button.textContent='Saving…';
   try {
-    const {error}=await window.HRDB.client.rpc('set_employee_status',{p_employee_id:form.dataset.employeeId,p_status:form.elements.status.value,p_reason:form.elements.reason.value.trim()});
-    if(error)throw error;
-    window.HRDB.status('Employee status updated and added to history.');
-    document.getElementById('statusDialog').close();
-    setTimeout(()=>location.reload(),350);
+    const employee=employees.find(row=>String(row.id)===String(form.dataset.employeeId));if(!employee)throw new Error('Employee record was not found.');
+    const args={p_employee_id:employee.id,p_status:form.elements.status.value,p_reason:form.elements.reason.value.trim()},expectedStatus=employee.employmentStatus||'Active';
+    if(!navigator.onLine){queueStatusChange(employee,args,expectedStatus);return}
+    const{error}=await window.HRDB.client.rpc('set_employee_status',args);
+    if(error){if(!/failed to fetch|networkerror|network request failed|fetch failed|load failed/i.test(String(error.message||error)))throw error;queueStatusChange(employee,args,expectedStatus);return}
+    employee.employmentStatus=args.p_status;employee.isActive=!['Suspended','Resigned'].includes(args.p_status);render();window.HRDB.status('Employee status updated and added to history.');
+    document.getElementById('statusDialog').close();setTimeout(()=>location.reload(),350);
   } catch(error) { window.HRDB.status('Could not change employee status: '+(error.message||''),true); }
   finally {button.disabled=false;button.textContent='Save status';}
 }
+function queueStatusChange(employee,args,expectedStatus){
+  window.HRDB.queueDatabaseWrite({action:'rpc',name:'set_employee_status',args,expectedStatus});
+  employee.employmentStatus=args.p_status;employee.isActive=!['Suspended','Resigned'].includes(args.p_status);render();
+  window.HRDB.status('Status change is saved on this device and is waiting to sync.');document.getElementById('statusDialog').close();
+}
 async function loadStatusHistory() {
   const target=document.getElementById('statusHistory');
-  const {data,error}=await window.HRDB.client.from('employee_status_history').select('id,employee_id,old_status,new_status,reason,changed_by,changed_at').order('changed_at',{ascending:false}).limit(200);
-  if(error){target.textContent='Could not load status history. Run employee-actions-migration.sql in Supabase.';return}
-  if(!data?.length){target.textContent='No employee status changes have been recorded.';return}
+  let data=[],error=null;
+  try{const result=await window.HRDB.client.from('employee_status_history').select('id,employee_id,old_status,new_status,reason,changed_by,changed_at').order('changed_at',{ascending:false}).limit(200);data=result.data||[];error=result.error}catch(caught){error=caught}
+  if(error){try{data=JSON.parse(localStorage.getItem('hr-employee-status-history-cache-v1'))||[]}catch{data=[]}}else localStorage.setItem('hr-employee-status-history-cache-v1',JSON.stringify(data));
+  const pending=window.HRDB.getPendingDatabaseOps().filter(operation=>operation.action==='rpc'&&operation.name==='set_employee_status').map(operation=>({id:operation.id,employee_id:operation.args.p_employee_id,old_status:operation.expectedStatus||'Active',new_status:operation.args.p_status,reason:operation.args.p_reason,changed_by:window.HRDB.user.id,changed_at:operation.createdAt,pendingSync:true}));
+  data=[...pending,...data.filter(row=>!pending.some(item=>item.employee_id===row.employee_id&&item.new_status===row.new_status))];
+  if(!data.length){target.textContent=error?'Could not load status history. Run employee-actions-migration.sql in Supabase.':'No employee status changes have been recorded.';return}
   const people=new Map(employees.map(person=>[person.id,person]));
   const actorIds=[...new Set(data.map(row=>row.changed_by).filter(Boolean))];
   let actors=new Map();
-  if(actorIds.length){const result=await window.HRDB.client.from('user_profiles').select('id,full_name,email').in('id',actorIds);if(!result.error)actors=new Map((result.data||[]).map(actor=>[actor.id,actor]))}
-  target.innerHTML='<div class="history-table-wrap"><table><thead><tr><th>Date</th><th>Employee</th><th>Status change</th><th>Reason</th><th>Changed by</th></tr></thead><tbody>'+data.map(row=>{const person=people.get(row.employee_id)||{},actor=actors.get(row.changed_by)||{};return '<tr><td>'+esc(new Date(row.changed_at).toLocaleString('en-IN'))+'</td><td>'+esc(get(person,'employeeCode')||get(person,'employeeNameAadhaar')||'Employee')+'</td><td>'+esc(row.old_status)+' → '+esc(row.new_status)+'</td><td>'+esc(row.reason)+'</td><td>'+esc(actor.full_name||actor.email||'User')+'</td></tr>'}).join('')+'</tbody></table></div>';
+  if(actorIds.length&&navigator.onLine){const result=await window.HRDB.client.from('user_profiles').select('id,full_name,email').in('id',actorIds);if(!result.error)actors=new Map((result.data||[]).map(actor=>[actor.id,actor]))}
+  target.innerHTML='<div class="history-table-wrap"><table><thead><tr><th>Date</th><th>Employee</th><th>Status change</th><th>Reason</th><th>Changed by</th></tr></thead><tbody>'+data.map(row=>{const person=people.get(row.employee_id)||{},actor=actors.get(row.changed_by)||{};return '<tr><td>'+esc(new Date(row.changed_at).toLocaleString('en-IN'))+'</td><td>'+esc(get(person,'employeeCode')||get(person,'employeeNameAadhaar')||'Employee')+'</td><td>'+esc(row.old_status)+' → '+esc(row.new_status)+(row.pendingSync?' · Pending sync':'')+'</td><td>'+esc(row.reason)+'</td><td>'+esc(actor.full_name||actor.email||'User')+'</td></tr>'}).join('')+'</tbody></table></div>';
 }
 function openEditor(id) {
   const employee=employees.find(row=>String(row.id)===String(id));if(!employee)return;
@@ -124,14 +134,26 @@ function toDatabaseRow(form) {
   });
   return row;
 }
+function applyDatabaseEmployeeRow(employee,row){
+  columns.filter(([key])=>key!=='srNo').forEach(([key])=>{const column=key==='employeeNameAadhaar'?'employee_name':snake(key);if(Object.hasOwn(row,column))employee[key]=row[column]??''});
+  employee.empCode=employee.employeeCode||'';employee.name=employee.employeeNameAadhaar||[employee.firstName,employee.surname].filter(Boolean).join(' ')||employee.empCode||'';
+}
+function isNetworkFailure(error){return !navigator.onLine||/failed to fetch|networkerror|network request failed|fetch failed|load failed|offline/i.test(String(error?.message||error||''))}
 async function saveEmployee(event) {
   event.preventDefault();const form=event.currentTarget,button=form.querySelector('[type="submit"]'),id=form.dataset.employeeId;
   button.disabled=true;button.textContent='Saving…';
   try {
+    if(!navigator.onLine)throw new TypeError('Device is offline.');
     const result=await window.HRDB.client.from('employees').update(toDatabaseRow(form)).eq('id',id).select('id').single();
     if(result.error)throw result.error;
     window.HRDB.status('Employee record updated.');document.getElementById('employeeEditDialog').close();setTimeout(()=>location.reload(),350);
-  } catch(error) { window.HRDB.status('Could not update employee: '+(error.message||'Check database access.'),true); }
+  } catch(error) {
+    if(isNetworkFailure(error)){
+      const payload=toDatabaseRow(form),employee=employees.find(row=>String(row.id)===String(id));
+      window.HRDB.queueDatabaseWrite({table:'employees',action:'update',recordId:id,payload});
+      if(employee)applyDatabaseEmployeeRow(employee,payload);render();document.getElementById('employeeEditDialog').close();window.HRDB.status('Employee update is saved on this device and is waiting to sync.');
+    }else window.HRDB.status('Could not update employee: '+(error.message||'Check database access.'),true);
+  }
   finally { button.disabled=false;button.textContent='Save changes'; }
 }
 async function deleteEmployee(id,button) {
@@ -140,12 +162,14 @@ async function deleteEmployee(id,button) {
   if(!window.confirm(`Permanently delete ${code}? This cannot be undone.`))return;
   button.disabled=true;button.textContent='Deleting…';
   try {
+    if(!navigator.onLine)throw new TypeError('Device is offline.');
     const result=await window.HRDB.client.from('employees').delete().eq('id',id).select('id').single();
     if(result.error)throw result.error;
     window.HRDB.status('Employee record deleted.');setTimeout(()=>location.reload(),350);
   } catch(error) {
-    window.HRDB.status('Could not delete employee. Existing shift, attendance, leave, or stock history may be linked to this record. '+(error.message||''),true);
-    button.disabled=false;button.textContent='Delete';
+    if(isNetworkFailure(error)){
+      window.HRDB.queueDatabaseWrite({table:'employees',action:'delete',recordId:id});employees=employees.filter(row=>String(row.id)!==String(id));render();window.HRDB.status('Employee deletion is saved on this device and is waiting to sync.');button.disabled=false;button.textContent='Delete';
+    }else{window.HRDB.status('Could not delete employee. Existing shift, attendance, leave, or stock history may be linked to this record. '+(error.message||''),true);button.disabled=false;button.textContent='Delete';}
   }
 }
 function csv(value){let text=String(value??'');if(/^[=+@\-\t\r]/.test(text))text="'"+text;return '"'+text.replace(/"/g,'""')+'"'}
