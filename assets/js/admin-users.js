@@ -37,6 +37,7 @@
   }
   const collectAccess=(container,role)=>role==='admin'?Object.fromEntries(pages.map(([key])=>[key,true])):Object.fromEntries([...container.querySelectorAll('input[name="pageAccess"]:checked')].map(input=>[input.value,true]));
   const accessSummary=(user)=>user.role==='admin'?'Full access':selectedKeys(user.page_access,user.role).map(key=>pages.find(page=>page[0]===key)?.[1]).filter(Boolean).join(', ')||'Dashboard only';
+  const sameAccess=(left,right)=>JSON.stringify(Object.keys(left||{}).filter(key=>left[key]===true).sort())===JSON.stringify(Object.keys(right||{}).filter(key=>right[key]===true).sort());
 
   function setMessage(target, text, error = false) {
     target.textContent = text;
@@ -192,17 +193,20 @@
     saveButton.disabled = true;
     saveButton.textContent = 'Saving…';
     const values = new FormData(editForm);
+    const role=String(values.get('role'));
+    const requestedPageAccess=collectAccess(document.getElementById('editPageAccessOptions'),role);
     try {
       const updated = await invokeManager({
         action: 'update',
         userId: String(values.get('userId')),
         fullName: String(values.get('fullName')).trim(),
         designation: String(values.get('designation')).trim(),
-        role: String(values.get('role')),
-        pageAccess: collectAccess(document.getElementById('editPageAccessOptions'),String(values.get('role')))
+        role,
+        pageAccess: requestedPageAccess
       });
+      if(!updated?.pageAccess||!sameAccess(updated.pageAccess,requestedPageAccess))throw new Error('The deployed admin-manage-user function did not confirm these page permissions. Deploy the latest function, then save again.');
       dialog.close();
-      setMessage(feedback, `Updated ${updated.email}: ${roleName[updated.role] || updated.role}.`);
+      setMessage(feedback, `Updated ${updated.email}: ${roleName[updated.role] || updated.role} and page access.`);
       await loadUsers();
     } catch (error) {
       setMessage(editFeedback, error.message || 'Could not update this account.', true);
