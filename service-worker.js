@@ -1,4 +1,4 @@
-const CACHE_NAME = 'bv-mining-hr-shell-v1';
+const CACHE_NAME = 'bv-mining-hr-shell-v2';
 const APP_FILES = [
   './index.html', './login.html', './404.html', './admin-users.html', './audit-log.html',
   './attendance.html', './employee-records.html', './employees-data.html', './leave.html',
@@ -22,7 +22,7 @@ const SUPABASE_SDK = 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2';
 self.addEventListener('install', event => {
   event.waitUntil((async () => {
     const cache = await caches.open(CACHE_NAME);
-    await cache.addAll(APP_FILES);
+    await cache.addAll(APP_FILES.map(file => new Request(file, { cache: 'reload' })));
     try {
       const sdk = await fetch(SUPABASE_SDK, { mode: 'no-cors' });
       await cache.put(SUPABASE_SDK, sdk);
@@ -48,7 +48,7 @@ self.addEventListener('fetch', event => {
   if (request.mode === 'navigate') {
     event.respondWith((async () => {
       try {
-        const response = await fetch(request);
+        const response = await fetch(request, { cache: 'no-store' });
         const cache = await caches.open(CACHE_NAME);
         await cache.put(request, response.clone());
         return response;
@@ -64,7 +64,7 @@ self.addEventListener('fetch', event => {
 
   event.respondWith((async () => {
     if(url.origin===self.location.origin){
-      try{const response=await fetch(request);const cache=await caches.open(CACHE_NAME);await cache.put(request,response.clone());return response}
+      try{const response=await fetch(request,{cache:'no-store'});const cache=await caches.open(CACHE_NAME);await cache.put(request,response.clone());return response}
       catch{const cached=await caches.match(request,{ignoreSearch:true});if(cached)return cached;throw new Error('This app file is not cached for offline use.')}
     }
     const cached=await caches.match(request);if(cached)return cached;
