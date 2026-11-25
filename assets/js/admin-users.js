@@ -15,7 +15,7 @@
     ['shift_board','Shift Board',['admin','mine_mate','foreman']],['mining_report','Mining Report',['admin','mine_mate','foreman']],
     ['attendance','Attendance',['admin','hr']],['monthly_attendance','Monthly Attendance',['admin','hr']],['leave','Leave',roles],
     ['stock_management','Stock Management',['admin','store']],['ppe_issue_records','PPE Issue Records',['admin','store']],
-    ['stock_returns','Stock & Returns',['admin','store']],['reports','Reports',['admin','hr']],['audit_log','Audit Log & Approvals',['admin']],['user_management','User Management',['admin']]
+    ['stock_returns','Stock & Returns',['admin','store']],['reports','Reports',['admin','hr']],['accounting','Accounting',['admin','hr','accountant','director']],['audit_log','Audit Log & Approvals',['admin']],['user_management','User Management',['admin']]
   ];
   const adminOnlyPages=new Set(['audit_log','user_management']);
   const defaultAccess = role => Object.fromEntries(pages.filter(([, , allowed])=>allowed.includes(role)).map(([key])=>[key,true]));
@@ -28,10 +28,10 @@
     const isAdmin=role==='admin';const selected=new Set(selectedKeys(access,role));
     container.replaceChildren();
     pages.forEach(([key,label,allowed])=>{
-      const canGrant=isAdmin||!adminOnlyPages.has(key);const item=document.createElement('label');item.className=`access-option${canGrant?'':' unavailable'}`;
+      const roleRestricted=key==='accounting'&&!allowed.includes(role);const canGrant=isAdmin||(!adminOnlyPages.has(key)&&!roleRestricted);const item=document.createElement('label');item.className=`access-option${canGrant?'':' unavailable'}`;
       const checkbox=document.createElement('input');checkbox.type='checkbox';checkbox.name='pageAccess';checkbox.value=key;checkbox.checked=isAdmin||selected.has(key);checkbox.disabled=isAdmin||!canGrant||key==='dashboard';
       const text=document.createElement('span');text.textContent=label;
-      item.append(checkbox,text);if(!canGrant){const hint=document.createElement('small');hint.textContent='Admin only';item.append(hint)}container.append(item);
+      item.append(checkbox,text);if(!canGrant){const hint=document.createElement('small');hint.textContent=roleRestricted?'Restricted to Admin, HR, Accountant, and Director':'Admin only';item.append(hint)}container.append(item);
     });
     const note=document.createElement('p');note.className='access-note';note.textContent=isAdmin?'Admin has full access to every page.':'Choose any page for this user. Dashboard access is always on; Audit Log and User Management are Admin only.';container.append(note);
   }

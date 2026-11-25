@@ -72,6 +72,20 @@
           </div>
         </div>
       </section>
+      <section class="leave-overview finance-overview" id="financialOverviewSection" aria-labelledby="financialOverviewTitle" hidden>
+        <div class="sectionhead leave-head">
+          <div><h2 id="financialOverviewTitle">Financial overview</h2><p id="financialOverviewDate">Cash, bank, income and expense summary for the selected date.</p></div>
+          <a class="leave-link" href="accounting.html">Open Accounting <span aria-hidden="true">→</span></a>
+        </div>
+        <div class="finance-cards" aria-live="polite">
+          <article><span>Income received</span><strong id="financeIncome">Loading…</strong><small id="financeIncomeDate">Selected date</small></article>
+          <article><span>Expenses paid</span><strong id="financeExpenses">Loading…</strong><small id="financeExpensesDate">Selected date</small></article>
+          <article class="finance-positive"><span>Cash in hand</span><strong id="financeCash">Loading…</strong><small>Balance as of selected date</small></article>
+          <article class="finance-positive"><span>Bank balance</span><strong id="financeBank">Loading…</strong><small>All bank accounts combined</small></article>
+          <article class="finance-warning"><span>Pending payments</span><strong id="financePendingPayments">Loading…</strong><small>Unpaid expenses</small></article>
+          <article class="finance-warning"><span>Pending salaries</span><strong id="financePendingSalaries">Loading…</strong><small>Unpaid payroll records</small></article>
+        </div>
+      </section>
       <section>
         <div class="sectionhead">
           <div>

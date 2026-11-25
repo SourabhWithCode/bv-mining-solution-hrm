@@ -10,7 +10,35 @@ function today(){const d=new Date();return `${d.getFullYear()}-${String(d.getMon
 function read(key,fallback){try{return JSON.parse(localStorage.getItem(key))||fallback}catch{return fallback}}
 let selectedDate=today();
 const overtimeOverrides={};
-let blastSummaryRequest=0;
+let blastSummaryRequest=0,financeDataPromise=null,financeRequest=0;
+const accountingRoles=['admin','hr','accountant','director'];
+function financeMoney(value){return new Intl.NumberFormat('en-IN',{style:'currency',currency:'INR',minimumFractionDigits:2}).format(Number(value)||0)}
+async function loadFinanceData(){
+ if(!financeDataPromise)financeDataPromise=Promise.all([
+  window.HRDB.client.from('accounting_accounts').select('id,account_type,opening_balance,opening_balance_date,is_active'),
+  window.HRDB.client.from('accounting_transactions').select('transaction_type,transaction_date,amount,payment_status,source_account_id,destination_account_id'),
+  window.HRDB.client.from('payroll_records').select('net_salary,payment_status,paid_at,payment_account_id')
+ ]).then(results=>{const failed=results.find(result=>result.error);if(failed)throw failed.error;return{accounts:results[0].data||[],transactions:results[1].data||[],payroll:results[2].data||[]}}).catch(error=>{financeDataPromise=null;throw error});
+ return financeDataPromise;
+}
+function calculateDashboardFinance(data,date){
+ const transaction=data.transactions,accountBalances=data.accounts.map(account=>{
+  const openingDate=account.opening_balance_date||'0000-01-01';let balance=date>=openingDate?Number(account.opening_balance)||0:0;
+  for(const item of transaction){if(item.transaction_date>date||item.transaction_date<openingDate)continue;if(item.transaction_type==='income'&&item.payment_status==='received'&&item.destination_account_id===account.id)balance+=Number(item.amount)||0;if(item.transaction_type==='expense'&&item.payment_status==='paid'&&item.source_account_id===account.id)balance-=Number(item.amount)||0;if(item.transaction_type==='transfer'&&item.payment_status==='completed'){if(item.source_account_id===account.id)balance-=Number(item.amount)||0;if(item.destination_account_id===account.id)balance+=Number(item.amount)||0}}
+  for(const item of data.payroll)if(item.payment_status==='paid'&&item.paid_at&&item.paid_at<=date&&item.paid_at>=openingDate&&item.payment_account_id===account.id)balance-=Number(item.net_salary)||0;
+  return{type:account.account_type,balance};
+ });
+ const income=transaction.filter(item=>item.transaction_type==='income'&&item.payment_status==='received'&&item.transaction_date===date).reduce((sum,item)=>sum+Number(item.amount),0);
+ const expenses=transaction.filter(item=>item.transaction_type==='expense'&&item.payment_status==='paid'&&item.transaction_date===date).reduce((sum,item)=>sum+Number(item.amount),0)+data.payroll.filter(item=>item.payment_status==='paid'&&item.paid_at===date).reduce((sum,item)=>sum+Number(item.net_salary),0);
+ const pendingPayments=transaction.filter(item=>item.transaction_type==='expense'&&item.payment_status==='pending').reduce((sum,item)=>sum+Number(item.amount),0),pendingSalaries=data.payroll.filter(item=>item.payment_status==='pending').reduce((sum,item)=>sum+Number(item.net_salary),0);
+ return{income,expenses,cash:accountBalances.filter(item=>item.type==='cash').reduce((sum,item)=>sum+item.balance,0),bank:accountBalances.filter(item=>item.type==='bank').reduce((sum,item)=>sum+item.balance,0),pendingPayments,pendingSalaries};
+}
+async function renderFinancialOverview(date){
+ const section=$('financialOverviewSection'),canSee=accountingRoles.includes(window.HRDB.role)&&window.HRDB.hasPageAccess('accounting');section.hidden=!canSee;if(!canSee)return;
+ const request=++financeRequest;$('financialOverviewDate').textContent=`Income, expenses, and balances for ${leaveDate(date)}.`;
+ try{const data=await loadFinanceData();if(request!==financeRequest)return;const totals=calculateDashboardFinance(data,date);$('financeIncome').textContent=financeMoney(totals.income);$('financeExpenses').textContent=financeMoney(totals.expenses);$('financeCash').textContent=financeMoney(totals.cash);$('financeBank').textContent=financeMoney(totals.bank);$('financePendingPayments').textContent=financeMoney(totals.pendingPayments);$('financePendingSalaries').textContent=financeMoney(totals.pendingSalaries);$('financeIncomeDate').textContent=date;$('financeExpensesDate').textContent=date}
+ catch(error){if(request!==financeRequest)return;console.error('Financial overview could not load:',error);['financeIncome','financeExpenses','financeCash','financeBank','financePendingPayments','financePendingSalaries'].forEach(id=>$(id).textContent='—');$('financialOverviewDate').textContent='Financial data is unavailable. Check Accounting setup and access.'}
+}
 async function renderBlastSummary(date){
  const request=++blastSummaryRequest;
  $('blastSummaryDate').textContent=`Blast counts for ${leaveDate(date)}.`;
@@ -45,6 +73,7 @@ function render(){
  renderOvertimeRequests(shift,date,assignments);
  renderLowStockAlerts();
  renderBlastSummary(date);
+ renderFinancialOverview(date);
  $('miningReportPageLink').hidden=!window.HRDB.hasPageAccess('mining_report');
  $('leavePageLink').hidden=!window.HRDB.hasPageAccess('leave');
  $('shiftBoardPageLink').hidden=!window.HRDB.hasPageAccess('shift_board');

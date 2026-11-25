@@ -21,6 +21,7 @@ In the Supabase project, open **SQL Editor** and run the files in this order:
 13. [director-approval-migration.sql](director-approval-migration.sql) to add the Director role and allow Directors to approve or reject leave and overtime requests.
 14. [owner-record-editing-migration.sql](owner-record-editing-migration.sql) to let users edit/delete their own Pending leave requests and edit their own Mining Reports for 24 hours.
 15. [device-session-migration.sql](device-session-migration.sql) to allow one active device session per account and sign out an older device after the next session check.
+16. [accounting-migration.sql](accounting-migration.sql) to add protected cash/bank accounts, income and expense transactions, payroll records, and audit history entries.
 
 If this is an older project with the earlier employee schema, run [supabase-employee-fields-migration.sql](supabase-employee-fields-migration.sql) before the app updates file.
 
@@ -42,6 +43,8 @@ The audit trail begins when [audit-log-migration.sql](audit-log-migration.sql) i
 New accounts are assigned one of: Admin, HR, Accountant, Store, Mechanical, Mine Mate, Foreman, Project Manager, Assistant Project Manager, or Director. Admins can separately select which app pages each non-admin account can open, regardless of role. Dashboard access is always available. Audit Log and User Management remain Admin-only. Page grants allow entry to the selected page. Users can edit or delete their own Pending leave requests; once approved or rejected, only Admins can manage them. The author of a Mining Report can edit it for 24 hours. Admins retain full record management access. Admin and Director can review and approve/reject all leave requests. Admin and Director can approve/reject overtime requests on the Dashboard. The Dashboard displays aggregate blast counts by shift for its selected date.
 
 With the device-session migration installed, a successful sign-in claims that account's active device slot. Any other signed-in device checks the slot every 10 seconds and signs out when it is replaced; an offline device is signed out when it reconnects and verifies its session. This is browser-enforced session control, so an already-open client may remain active until its next check.
+
+The Accounting page is available to Admin, HR, Accountant, and Director when their page access is enabled. Admin and Accountant can add cash/bank accounts, income and expense records, prepare salary records, mark salaries paid, and remove entries; HR and Director can view financial records and print/download payslips. Enter reconciled opening balances and the date each balance applies from before relying on balance totals. Payroll rows are unique for each employee and salary month, and net salary is calculated from basic pay, overtime, allowances, and deductions.
 
 ## 3. Enable admin-only account management
 

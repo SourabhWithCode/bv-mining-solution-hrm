@@ -1,6 +1,6 @@
 # BV Mining Solution HR App
 
-Static HR, shift, attendance, leave, and stock management app. No build step is required.
+Static HR, shift, attendance, leave, accounting, and stock management app. No build step is required.
 
 ## Structure
 
@@ -10,6 +10,7 @@ Static HR, shift, attendance, leave, and stock management app. No build step is 
 ├── 404.html                   # Friendly missing-page and restricted-access page
 ├── login.html                 # Supabase Auth sign-in
 ├── attendance.html
+├── accounting.html             # Finance, balances, payroll, and payslips
 ├── admin-users.html           # Admin-only account creation
 ├── employee-records.html
 ├── employees-data.html

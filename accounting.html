@@ -1,0 +1,51 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>Accounting | BV Mining Solution</title>
+  <link rel="stylesheet" href="assets/css/accounting.css">
+  <link rel="stylesheet" href="assets/css/responsive.css">
+</head>
+<body>
+  <main class="shell accounting-shell">
+    <header class="top"><div class="brand"><div class="mark">BV</div><div><strong>BV Mining Solution</strong><small>Accounting and payroll</small></div></div><nav class="links"><a class="link" href="index.html">Dashboard</a></nav></header>
+    <section class="hero"><div class="eyebrow">Finance workspace</div><h1>Accounting</h1><p>Track daily income, expenses, cash and bank balances, payroll, and payslips.</p></section>
+
+    <section class="dashboard panel">
+      <div class="panel-heading"><div><h2>Financial overview</h2><p>Balances are calculated from the opening balance and recorded transactions.</p></div><label class="date-filter">View as of <input id="asOfDate" type="date"></label></div>
+      <div class="summary-grid">
+        <article class="metric"><span>Income received</span><strong id="todayIncome">₹0.00</strong><small id="incomeDateLabel">Selected date</small></article>
+        <article class="metric"><span>Expenses paid</span><strong id="todayExpenses">₹0.00</strong><small id="expenseDateLabel">Selected date</small></article>
+        <article class="metric positive"><span>Cash in hand</span><strong id="cashBalance">₹0.00</strong><small>Balance as of selected date</small></article>
+        <article class="metric positive"><span>Bank balance</span><strong id="bankBalance">₹0.00</strong><small>All bank accounts combined</small></article>
+        <article class="metric warning"><span>Pending payments</span><strong id="pendingPayments">₹0.00</strong><small>Unpaid expenses</small></article>
+        <article class="metric warning"><span>Pending salaries</span><strong id="pendingSalaries">₹0.00</strong><small>Unpaid payroll records</small></article>
+      </div>
+    </section>
+
+    <section class="panel section-panel" id="accountsSection">
+      <div class="panel-heading"><div><h2>Cash and bank accounts</h2><p>Set an opening balance for each cash drawer or bank account.</p></div></div>
+      <div class="editor-grid"><form id="accountForm" class="form-grid"><h3>Add an account</h3><label>Account name<input id="accountName" maxlength="80" required placeholder="Cash in Hand or Main Bank"></label><label>Account type<select id="accountType" required><option value="cash">Cash</option><option value="bank">Bank</option></select></label><label id="bankNameWrap" hidden>Bank name<input id="bankName" maxlength="100" placeholder="Bank name"></label><label>Opening balance (₹)<input id="openingBalance" type="number" min="0" step="0.01" value="0" required></label><label>Opening balance date<input id="openingBalanceDate" type="date" required></label><button class="primary" type="submit">Add account</button><p class="form-note">Enter the account balance and the date it applies from.</p></form><div class="table-wrap"><table><thead><tr><th>Account</th><th>Type</th><th>Opening balance</th><th>Current balance</th><th>Status</th></tr></thead><tbody id="accountRows"><tr><td colspan="5" class="empty">Loading accounts…</td></tr></tbody></table></div></div>
+    </section>
+
+    <section class="panel section-panel" id="transactionsSection">
+      <div class="panel-heading"><div><h2>Income and expenses</h2><p>Record money received, payments, and cash-to-bank transfers.</p></div></div>
+      <div class="editor-grid"><form id="transactionForm" class="form-grid"><h3>New transaction</h3><label>Entry type<select id="transactionType" required><option value="income">Income received / receivable</option><option value="expense">Expense paid / payable</option><option value="transfer">Cash / bank transfer</option></select></label><label>Date<input id="transactionDate" type="date" required></label><label>Category<input id="transactionCategory" maxlength="80" required placeholder="Fuel, production, sales…"></label><label>Amount (₹)<input id="transactionAmount" type="number" min="0.01" step="0.01" required></label><label id="paymentStatusWrap">Payment status<select id="paymentStatus" required></select></label><label id="partyNameWrap">Paid by / paid to<input id="partyName" maxlength="120" placeholder="Person or company"></label><label id="sourceAccountWrap" hidden>From account<select id="sourceAccount"></select></label><label id="destinationAccountWrap">To account<select id="destinationAccount"></select></label><label>Reference number<input id="referenceNumber" maxlength="100" placeholder="Invoice / voucher number"></label><label class="wide">Description<input id="transactionDescription" maxlength="240" placeholder="Short details"></label><button class="primary" type="submit">Save transaction</button></form><div class="table-wrap"><table><thead><tr><th>Date</th><th>Type</th><th>Category / Details</th><th>Account</th><th>Amount</th><th>Status</th><th>Action</th></tr></thead><tbody id="transactionRows"><tr><td colspan="7" class="empty">Loading transactions…</td></tr></tbody></table></div></div>
+    </section>
+
+    <section class="panel section-panel" id="payrollSection">
+      <div class="panel-heading"><div><h2>Payroll and payslips</h2><p>Payroll records and payslips are visible to Admin, HR, Accountant, and Director. Admin and Accountant can manage them.</p></div></div>
+      <div class="editor-grid"><form id="payrollForm" class="form-grid"><h3>Prepare salary record</h3><label>Employee<select id="payrollEmployee" required></select></label><label>Salary month<input id="payPeriod" type="month" required></label><label>Basic pay (₹)<input id="basicPay" type="number" min="0" step="0.01" value="0" required></label><label>Overtime pay (₹)<input id="overtimePay" type="number" min="0" step="0.01" value="0" required></label><label>Allowances (₹)<input id="allowances" type="number" min="0" step="0.01" value="0" required></label><label>Deductions (₹)<input id="deductions" type="number" min="0" step="0.01" value="0" required></label><label class="wide">Remarks<input id="payrollRemarks" maxlength="240" placeholder="Optional payroll note"></label><p class="net-preview">Net salary: <strong id="netSalaryPreview">₹0.00</strong></p><button class="primary" type="submit">Save salary record</button><p class="form-note">Saving an employee and month already on file is blocked to prevent duplicate payroll.</p></form><div class="table-wrap"><table><thead><tr><th>Month</th><th>Employee</th><th>Basic</th><th>Overtime</th><th>Allowances</th><th>Deductions</th><th>Net salary</th><th>Status</th><th>Payslip / Action</th></tr></thead><tbody id="payrollRows"><tr><td colspan="9" class="empty">Loading payroll…</td></tr></tbody></table></div></div>
+    </section>
+
+    <section class="panel section-panel" id="reportsSection">
+      <div class="panel-heading"><div><h2>Financial reports</h2><p>Review transactions and salary payments for any date range.</p></div></div>
+      <div class="report-controls"><label>From<input id="reportFrom" type="date"></label><label>To<input id="reportTo" type="date"></label><button class="secondary" id="generateReport" type="button">Generate report</button><button class="primary" id="exportReport" type="button">Download CSV</button></div>
+      <p class="report-summary" id="reportSummary">Choose a date range.</p><div class="table-wrap" id="reportTable"><div class="empty">No report generated yet.</div></div>
+    </section>
+    <p class="footnote">Financial balances reflect only entries recorded in this Accounting page. Reconcile opening balances before relying on totals.</p>
+  </main>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script><script src="assets/js/supabase-config.js"></script><script src="assets/js/supabase-client.js"></script><script src="assets/js/app-bootstrap.js"></script><script>window.HRDB.boot().then(function(ready){if(!ready)return;var app=document.createElement('script');app.src='assets/js/accounting.js';document.body.appendChild(app)}).catch(function(error){window.HRDB.status('Supabase connection failed: '+error.message,true)})</script>
+</body>
+</html>
