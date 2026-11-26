@@ -11,6 +11,8 @@ Static HR, shift, attendance, leave, accounting, and stock management app. No bu
 ├── login.html                 # Supabase Auth sign-in
 ├── attendance.html
 ├── accounting.html             # Finance, balances, payroll, and payslips
+├── payroll.html                # Monthly payroll and payslips
+├── financial-reports.html      # Date-range accounting exports
 ├── admin-users.html           # Admin-only account creation
 ├── employee-records.html
 ├── employees-data.html

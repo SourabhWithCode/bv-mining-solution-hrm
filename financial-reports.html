@@ -1,0 +1,17 @@
+<!doctype html>
+<html lang="en">
+<head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Financial Reports | BV Mining Solution</title><link rel="stylesheet" href="assets/css/accounting.css"><link rel="stylesheet" href="assets/css/responsive.css"></head>
+<body>
+  <main class="shell accounting-shell">
+    <header class="top"><div class="brand"><div class="mark">BV</div><div><strong>BV Mining Solution</strong><small>Accounting · Reports</small></div></div><nav class="links"><a class="link" href="index.html">Dashboard</a></nav></header>
+    <section class="hero"><div class="eyebrow">Accounting</div><h1>Financial Reports</h1><p>Review income, expenses, transfers, and salary payments by date or month.</p></section>
+    <nav class="accounting-subnav" aria-label="Accounting pages"><a href="accounting.html">Accounting Dashboard</a><a href="payroll.html">Payroll &amp; Payslips</a><a href="financial-reports.html" aria-current="page">Financial Reports</a></nav>
+    <section class="panel section-panel" id="reportsSection">
+      <div class="panel-heading"><div><h2>Financial activity</h2><p>Payroll is dated by payment date when paid, otherwise by salary month.</p></div></div>
+      <div class="report-controls"><label>From<input id="reportFrom" type="date"></label><label>To<input id="reportTo" type="date"></label><button class="secondary" id="generateReport" type="button">Generate report</button><button class="primary" id="exportReport" type="button">Download CSV</button></div>
+      <p class="report-summary" id="reportSummary">Choose a date range.</p><div class="table-wrap" id="reportTable"><div class="empty">No report generated yet.</div></div>
+    </section>
+  </main>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script><script src="assets/js/supabase-config.js"></script><script src="assets/js/supabase-client.js"></script><script src="assets/js/app-bootstrap.js"></script><script>window.HRDB.boot().then(function(ready){if(!ready)return;var app=document.createElement('script');app.src='assets/js/financial-reports.js';document.body.appendChild(app)}).catch(function(error){window.HRDB.status('Supabase connection failed: '+error.message,true)})</script>
+</body>
+</html>

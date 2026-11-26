@@ -44,7 +44,7 @@ New accounts are assigned one of: Admin, HR, Accountant, Store, Mechanical, Mine
 
 With the device-session migration installed, a successful sign-in claims that account's active device slot. Any other signed-in device checks the slot every 10 seconds and signs out when it is replaced; an offline device is signed out when it reconnects and verifies its session. This is browser-enforced session control, so an already-open client may remain active until its next check.
 
-The Accounting page is available to Admin, HR, Accountant, and Director when their page access is enabled. Admin and Accountant can add cash/bank accounts, income and expense records, prepare salary records, mark salaries paid, and remove entries; HR and Director can view financial records and print/download payslips. Enter reconciled opening balances and the date each balance applies from before relying on balance totals. Payroll rows are unique for each employee and salary month, and net salary is calculated from basic pay, overtime, allowances, and deductions.
+The Accounting Dashboard, Payroll & Payslips, and Financial Reports pages share the Accounting page permission and are available to Admin, HR, Accountant, and Director when enabled. Admin and Accountant can add cash/bank accounts, income and expense records, prepare salary records, mark salaries paid, and remove entries; HR and Director can view financial records and print/download payslips. Enter reconciled opening balances and the date each balance applies from before relying on balance totals. Payroll rows are unique for each employee and salary month, and net salary is calculated from basic pay, overtime, allowances, and deductions.
 
 ## 3. Enable admin-only account management
 

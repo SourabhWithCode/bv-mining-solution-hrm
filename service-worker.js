@@ -2,7 +2,7 @@ const CACHE_NAME = 'bv-mining-hr-shell-v2';
 const APP_FILES = [
   './index.html', './login.html', './404.html', './admin-users.html', './audit-log.html',
   './attendance.html', './employee-records.html', './employees-data.html', './leave.html',
-  './mining-report.html', './monthly-attendance.html', './accounting.html', './ppe-issue-records.html',
+  './mining-report.html', './monthly-attendance.html', './accounting.html', './payroll.html', './financial-reports.html', './ppe-issue-records.html',
   './ppe-stock.html', './reports.html', './samaan-issue.html', './shift-dashboard.html',
   './assets/css/admin-users.css', './assets/css/admin-users-access.css', './assets/css/attendance.css', './assets/css/accounting.css',
   './assets/css/audit-log.css', './assets/css/employee-records.css', './assets/css/employees-data.css',
@@ -10,7 +10,7 @@ const APP_FILES = [
   './assets/css/mining-report.css', './assets/css/mining-theme.css', './assets/css/monthly-attendance.css',
   './assets/css/ppe-issue-records.css', './assets/css/ppe-stock.css', './assets/css/reports.css',
   './assets/css/responsive.css', './assets/css/samaan-issue.css', './assets/css/shift-dashboard.css',
-  './assets/js/admin-users.js', './assets/js/app-bootstrap.js', './assets/js/attendance.js', './assets/js/accounting.js',
+  './assets/js/admin-users.js', './assets/js/app-bootstrap.js', './assets/js/attendance.js', './assets/js/accounting.js', './assets/js/payroll.js', './assets/js/financial-reports.js',
   './assets/js/audit-log.js', './assets/js/employee-records.js', './assets/js/employees-data.js',
   './assets/js/index.js', './assets/js/leave.js', './assets/js/login.js', './assets/js/mining-report.js',
   './assets/js/monthly-attendance.js', './assets/js/ppe-issue-records.js', './assets/js/ppe-stock.js',
