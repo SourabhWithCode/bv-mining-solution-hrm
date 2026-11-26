@@ -307,11 +307,33 @@
     const nav=document.createElement('nav');nav.className='hrdb-side-nav';
     const current=location.pathname.split('/').pop()||'index.html';
     const pageKey={'index.html':'dashboard','employee-records.html':'employee_records','employees-data.html':'employees_data','shift-dashboard.html':'shift_board','mining-report.html':'mining_report','attendance.html':'attendance','monthly-attendance.html':'monthly_attendance','leave.html':'leave','samaan-issue.html':'stock_management','ppe-issue-records.html':'ppe_issue_records','ppe-stock.html':'stock_returns','reports.html':'reports','accounting.html':'accounting'};
-    const hiddenMenuPages=new Set(['employees-data.html','monthly-attendance.html','ppe-issue-records.html','ppe-stock.html','reports.html','accounting.html']);
-    pages.filter(([,href])=>!hiddenMenuPages.has(href)&&(role==='admin'||pageAccess[pageKey[href]]===true)).forEach(([label,href])=>{const link=document.createElement('a');link.href=href;link.textContent=label;if(current===href)link.setAttribute('aria-current','page');nav.append(link)});
-    const hasAccounting=role==='admin'||pageAccess.accounting===true,hasReports=role==='admin'||pageAccess.reports===true;
-    if(hasAccounting||hasReports){const group=document.createElement('div');group.className='hrdb-side-group';if(hasAccounting){const accounting=document.createElement('a');accounting.href='accounting.html';accounting.textContent='Accounting';if(['accounting.html','payroll.html','financial-reports.html'].includes(current))accounting.setAttribute('aria-current','page');group.append(accounting)}else{const label=document.createElement('span');label.className='hrdb-side-group-label';label.textContent='Accounting';group.append(label)}if(hasReports){const reports=document.createElement('a');reports.className='hrdb-side-child';reports.href='reports.html';reports.textContent='Reports';if(current==='reports.html')reports.setAttribute('aria-current','page');group.append(reports)}nav.append(group)}
-    if(role==='admin'){const approvals=document.createElement('a');approvals.href='audit-log.html';approvals.textContent='Audit Log & Approvals';if(current==='audit-log.html')approvals.setAttribute('aria-current','page');nav.append(approvals);const users=document.createElement('a');users.href='admin-users.html';users.textContent='User Management';if(current==='admin-users.html')users.setAttribute('aria-current','page');nav.append(users)}
+    const pageNavigation={
+      'employee-records.html':[['Employees Data','employees-data.html'],['Shift Board','shift-dashboard.html']],
+      'employees-data.html':[['Employee Records','employee-records.html']],
+      'attendance.html':[['Monthly Attendance','monthly-attendance.html'],['Leave','leave.html'],['Reports','reports.html']],
+      'leave.html':[['Attendance','attendance.html'],['Reports','reports.html']],
+      'monthly-attendance.html':[['Attendance','attendance.html']],
+      'accounting.html':[['Payroll & Payslips','payroll.html'],['Financial Reports','financial-reports.html']],
+      'payroll.html':[['Accounting Dashboard','accounting.html'],['Payroll & Payslips','payroll.html'],['Financial Reports','financial-reports.html']],
+      'financial-reports.html':[['Accounting Dashboard','accounting.html'],['Payroll & Payslips','payroll.html'],['Financial Reports','financial-reports.html']],
+      'reports.html':[['Attendance','attendance.html'],['Leave','leave.html']],
+      'ppe-issue-records.html':[['Stock Management','samaan-issue.html'],['Stock & Returns','ppe-stock.html']],
+      'ppe-stock.html':[['Stock Management','samaan-issue.html'],['Reports','reports.html']],
+      'samaan-issue.html':[['PPE Issue Records','ppe-issue-records.html'],['Stock & Returns','ppe-stock.html']]
+    };
+    const canShowMenuLink=href=>href==='index.html'||role==='admin'||(['admin-users.html','audit-log.html'].includes(href)?false:pageAccess[pageKey[href]]===true);
+    const pageLinks=current==='index.html'
+      ?pages.filter(([,href])=>{
+        const hiddenMenuPages=new Set(['employees-data.html','monthly-attendance.html','ppe-issue-records.html','ppe-stock.html','reports.html','accounting.html']);
+        return !hiddenMenuPages.has(href)&&canShowMenuLink(href);
+      })
+      :[['HR Home','index.html'],...(pageNavigation[current]||[])].filter(([,href])=>canShowMenuLink(href));
+    pageLinks.forEach(([label,href])=>{const link=document.createElement('a');link.href=href;link.textContent=label;if(current===href)link.setAttribute('aria-current','page');nav.append(link)});
+    if(current==='index.html'){
+      const hasAccounting=role==='admin'||pageAccess.accounting===true,hasReports=role==='admin'||pageAccess.reports===true;
+      if(hasAccounting||hasReports){const group=document.createElement('div');group.className='hrdb-side-group';if(hasAccounting){const accounting=document.createElement('a');accounting.href='accounting.html';accounting.textContent='Accounting';if(['accounting.html','payroll.html','financial-reports.html'].includes(current))accounting.setAttribute('aria-current','page');group.append(accounting)}else{const label=document.createElement('span');label.className='hrdb-side-group-label';label.textContent='Accounting';group.append(label)}if(hasReports){const reports=document.createElement('a');reports.className='hrdb-side-child';reports.href='reports.html';reports.textContent='Reports';if(current==='reports.html')reports.setAttribute('aria-current','page');group.append(reports)}nav.append(group)}
+      if(role==='admin'){const approvals=document.createElement('a');approvals.href='audit-log.html';approvals.textContent='Audit Log & Approvals';if(current==='audit-log.html')approvals.setAttribute('aria-current','page');nav.append(approvals);const users=document.createElement('a');users.href='admin-users.html';users.textContent='User Management';if(current==='admin-users.html')users.setAttribute('aria-current','page');nav.append(users)}
+    }
     sidebar.append(nav);
     const account=document.createElement('div');account.className='hrdb-side-account';
     const name=document.createElement('strong');name.textContent=displayName;name.title=displayName;
